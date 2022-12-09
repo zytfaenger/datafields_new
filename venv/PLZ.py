@@ -23,6 +23,5 @@ def l_select_plz_info_by_PLZ(PLZ):
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
-    print(demo)
 
 print(l_select_plz_info_by_PLZ(6005))
