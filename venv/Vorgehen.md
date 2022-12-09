@@ -1,0 +1,24 @@
+- Funktionen schreiben für:
+  - Add
+  - Edit
+  - Delete
+- Form machen
+  - Column-Panel
+  - Repeating-Panel
+    - notwendige Spalten machen plus Edit-Spalte
+  - Data Row eingeben
+    - Felder mit Eingabefelder füllen
+    - Richtig benamsen
+    - Edit-Buttons einfügen und benennen
+- Repeating Panel mit Liste von Server binden
+  - self.repeating_panel1.items=anvil.server.call(...)
+  - In Repeating Panel eine Datenzeile auswählen
+    - Felder mit Datasource an die Dictionary-Items binden
+  - Register event-handler auf dem Repeating-panel:
+    - self.repeating_panel_1.set_event_handler('x-refresh-languages',self.refresh_languages)
+    - mache eine Funktion refresh_languages:
+      -   def refresh_languages(self,**event_args):
+      -       self.repeating_panel_1=self.get_items() (oder ähnlich)
+  Achtung Check-boxes haben eine Attribut "checked"
+- Achtung: Eventhandler ohne =
+- Achtzung Commit mit ()
