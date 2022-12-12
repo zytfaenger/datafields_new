@@ -10,6 +10,7 @@ from field_types import l_change_status_field_type_by_short_name, l_update_field
 from doc_set_definition import *
 from doc_set_compositions import *
 from client_data_main import *
+from PLZ import l_select_plz_info_by_PLZ, l_select_plz_info_by_ID
 
 from connections import get_connection
 
@@ -207,6 +208,15 @@ def set_fd(user_id, case_id, dsc_id,pl_text,pl_number,pl_boolean):
 @anvil.server.callable
 def get_fd(case_id, field_id):
     return l_get_fd(case_id,field_id)
+
+@anvil.server.callable
+def select_plz_info_by_PLZ(PLZ):
+    return l_select_plz_info_by_PLZ(PLZ)
+
+@anvil.server.callable
+def select_plz_info_by_ID(plz_id):
+    return l_select_plz_info_by_ID(plz_id)
+
 
 
 # print(get_languages())
