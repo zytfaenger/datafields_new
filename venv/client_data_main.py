@@ -3,7 +3,7 @@ from log_functions import log_add_log_entry
 from connections import get_connection
 from doc_set_definition import l_select_dsd_by_case
 from doc_set_compositions import l_select_dsc_to_store_for_dsd,l_select_dsc_id_by_case_and_field
-from cases_functions import l_get_dsd_reference_for_case_id, l_select_language_by_case_id,l_select_language_by_case_id
+from cases_functions import l_get_dsd_reference_for_case_id,l_select_language_by_case_id, l_get_user_id_for_case_id
 from field_descriptions import l_get_label, l_get_prompt
 conn = get_connection()
 
@@ -107,37 +107,6 @@ def l_get_cdm_entry_ID(case_id, dsc_id_ref):
     #print(a)
     return a
 
-def l_get_fd(case_id, field_id):
-    current_dsd=l_get_dsd_reference_for_case_id(case_id)
-    current_lang=l_select_language_by_case_id(case_id)
-    current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
-    print("zwischenstand l_get_fd: ", current_dsd, current_lang, current_dsc)
-    result= {}
-    query= """select 
-                payload_text
-              from 
-                client_data_main
-              where
-                dsc_reference=?
-            """
-    cursor.execute(query,current_dsc)
-
-    payload= cursor.fetchone()
-    print(payload)
-    if payload == None:
-        result['payload']=None
-        print("No payload or record found")
-        print("Feld ist", field_id, current_lang)
-    else:
-        result['payload']=payload[0]
-
-    print("zwischenstand l_get_fd: ", current_dsd, current_lang, current_dsc, payload)
-    print(l_get_label(current_lang, field_id))
-    result['label']=l_get_label(current_lang,field_id)
-    result['prompt']=l_get_prompt(current_lang,field_id)
-    return result
-
-print(l_get_fd(case_id=120,field_id=110))
 
 
 def l_select_cdm_by_id(id):
@@ -264,6 +233,39 @@ def l_ensure_completeness_of_stores(case_id):
         else:
             print(current_dsc_id, " exists!")
 
+def l_get_fd(case_id, field_id):
+    current_dsd=l_get_dsd_reference_for_case_id(case_id)
+    current_lang=l_select_language_by_case_id(case_id)
+    current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
+    current_userID=l_get_user_id_for_case_id(case_id)
+    print("zwischenstand l_get_fd: ", current_dsd, current_lang, current_dsc,current_userID)
+    result= {}
+    query= """select 
+                payload_text
+              from 
+                client_data_main
+              where
+                dsc_reference=?
+            """
+    cursor.execute(query,current_dsc)
+    payload= cursor.fetchone()[0]
+    print('get_fd payload',payload)
+    if payload == None:
+        print("No record found")
+        l_add_cdm_entry(current_userID, case_id, current_dsc, pl_text=None, pl_number=None, pl_boolean=None)
+        print('missing cdm record added:!')
+        cursor.execute(query,current_dsc)
+        payload=cursor.fetchone()
+        print('New payload:',payload)
+    result['payload']=payload
+    print("zwischenstand l_get_fd: ", current_dsd, current_lang, current_dsc, payload)
+    print(l_get_label(current_lang, field_id))
+    result['label']=l_get_label(current_lang,field_id)
+    result['prompt']=l_get_prompt(current_lang,field_id)
+    print(result)
+    return result
+
+#print(l_get_fd(case_id=100,field_id=190))
 
 
 

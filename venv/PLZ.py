@@ -26,7 +26,7 @@ def l_select_plz_info_by_PLZ(PLZ):
         results.append(lentry)
     return results
 
-print(l_select_plz_info_by_PLZ(6005))
+#print(l_select_plz_info_by_PLZ(6005))
 
 def l_select_plz_info_by_ID(plz_id):
     query="""
