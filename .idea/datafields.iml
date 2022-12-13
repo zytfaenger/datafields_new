@@ -8,7 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/venv/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (datafields)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
