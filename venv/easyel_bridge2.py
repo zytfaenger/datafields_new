@@ -1,17 +1,18 @@
 import anvil.server
 
+import client_data_main
+import functions
+import language_functions
 from language_functions import l_select_language_by_id, l_select_language_by_shortname, l_get_all_languages, \
     l_get_active_languages, l_add_language, l_update_language, l_change_status_language_by_short_name, \
     l_change_status_language_by_id
-from log_functions import log_add_log_entry
 from field_types import l_change_status_field_type_by_short_name, l_update_field_type, l_add_field_type, \
     l_select_field_type_by_id, l_select_field_types_by_shortname, l_get_active_field_types, l_get_all_field_types, \
     l_change_status_field_type_by_id
 from doc_set_definition import *
 from doc_set_compositions import *
-from client_data_main import *
-from PLZ import l_select_plz_info_by_PLZ, l_select_plz_info_by_ID
-
+from PLZ import l_select_plz_info_by_plz, l_select_plz_info_by_id
+from functions import l_ahv_check
 from connections import get_connection
 
 conn = get_connection()
@@ -19,11 +20,12 @@ conn = get_connection()
 
 anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')
 
-#-------- Languages----------#
+# -------- Languages----------#
+
 
 @anvil.server.callable
 def get_active_languages():
-    return l_get_active_languages()
+    return language_functions.l_get_active_languages()
 
 
 @anvil.server.callable
@@ -43,11 +45,12 @@ def select_language_by_id(lang_id):
 
 @anvil.server.callable()
 def select_language_by_case(case_id):
-    return l_select_language_by_case(case_id)
+    return functions.l_select_language_by_case_id(case_id)
 
 
-def add_log_entry(user, current_timestamp, table_name,table_id, payload):
-    return log_add_log_entry (user, current_timestamp, table_name,table_id, payload)
+def add_log_entry(user, current_timestamp, table_name, table_id, payload):
+    return log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
+
 
 @anvil.server.callable
 def add_language(short_name, german_name, local_name):
@@ -58,72 +61,80 @@ def add_language(short_name, german_name, local_name):
 def update_language(id_to_change, short_name, german_name, local_name):
     l_update_language(id_to_change, short_name, german_name, local_name)
 
-@anvil.server.callable
-def change_status_language_by_short_name(short_name,new_status:int):
-    l_change_status_language_by_short_name (short_name,new_status)
-
 
 @anvil.server.callable
-def change_status_language_by_id(id_to_change:int,new_status:int):
-    l_change_status_language_by_id(id_to_change,new_status)
+def change_status_language_by_short_name(short_name, new_status):
+    l_change_status_language_by_short_name(short_name, new_status)
 
 
+@anvil.server.callable
+def change_status_language_by_id(id_to_change: int, new_status: int):
+    l_change_status_language_by_id(id_to_change, new_status)
 
 
-#-------- Field-Types----------#
+# -------- Field-Types----------#
 @anvil.server.callable
 def get_active_field_types():
     return l_get_active_field_types()
+
 
 @anvil.server.callable
 def get_all_field_types():
     return l_get_all_field_types()
 
-@anvil.server.callable
-def select_field_types_by_shortname(type):
-    return l_select_field_types_by_shortname(type)
-
 
 @anvil.server.callable
-def select_field_type_by_id(id):
-    #print("das esch es",l_select_field_type_by_id(id))
-    return l_select_field_type_by_id(id)
-
-@anvil.server.callable
-def add_field_type(type,description,sequence):
-    return l_add_field_type(type,description,sequence)
-
-@anvil.server.callable
-def update_field_type(id_to_change, type, description,sequence):
-    #print("update fieldtype",id_to_change,type,description,sequence)
-    l_update_field_type(id_to_change, type, description, sequence)
-
-@anvil.server.callable
-def change_status_field_type_by_short_name(type,new_status:int):
-    l_change_status_field_type_by_short_name(type, new_status)
+def select_field_types_by_shortname(ftype):
+    return l_select_field_types_by_shortname(ftype)
 
 
 @anvil.server.callable
-def change_status_field_type_by_id(id_to_change:int,new_status:int):
+def select_field_type_by_id(ft_id):
+    # print("das esch es",l_select_field_type_by_id(id))
+    return l_select_field_type_by_id(ft_id)
+
+
+@anvil.server.callable
+def add_field_type(ft_type, description, sequence):
+    return l_add_field_type(ft_type, description, sequence)
+
+
+@anvil.server.callable
+def update_field_type(id_to_change, ft_type, description, sequence):
+    # print("update fieldtype",id_to_change,type,description,sequence)
+    l_update_field_type(id_to_change, ft_type, description, sequence)
+
+
+@anvil.server.callable
+def change_status_field_type_by_short_name(ft_type, new_status: int):
+    l_change_status_field_type_by_short_name(ft_type, new_status)
+
+
+@anvil.server.callable
+def change_status_field_type_by_id(id_to_change: int, new_status: int):
     l_change_status_field_type_by_id(id_to_change, new_status)
 
 
-#----Doc Set Definition: Document Set Definition
+# ----Doc Set Definition: Document Set Definition
 
 @anvil.server.callable
 def get_active_dsd():
     return l_get_active_dsd()
 
+
 @anvil.server.callable
 def get_all_dsd():
     return l_get_all_dsd()
 
+
 @anvil.server.callable
-def select_dsd_by_id(id):
-    return l_select_dsd_by_id(id)
+def select_dsd_by_id(dsd_id):
+    return l_select_dsd_by_id(dsd_id)
+
 
 def select_dsd_by_case(case_id):
     return l_select_dsd_by_case(case_id)
+
 
 @anvil.server.callable
 def add_dsd_entry(name, domain, year):
@@ -136,19 +147,21 @@ def update_dsd(id_to_change, name, domain, year):
 
 
 @anvil.server.callable
-def change_status_dsd_by_id(id_to_change,new_status):
-    l_change_status_dsd_by_id(id_to_change,new_status)
+def change_status_dsd_by_id(id_to_change, new_status):
+    l_change_status_dsd_by_id(id_to_change, new_status)
 
 
-#----Doc Set Comp: Document Set Composition --------------
+# ----Doc Set Comp: Document Set Composition --------------
 
 @anvil.server.callable
 def get_active_dsc():
     return l_get_active_dsc()
 
+
 @anvil.server.callable
 def get_all_dsc():
     return l_get_all_dsc()
+
 
 @anvil.server.callable
 def select_dsc_by_dsd(dsd):
@@ -161,35 +174,34 @@ def select_dsc_to_store_for_dsd(case_dsd, case_language):
 
 
 @anvil.server.callable
-def select_dsc_by_id(id):
-    return l_select_dsc_by_id(id)
+def select_dsc_by_id(dsc_id):
+    return l_select_dsc_by_id(dsc_id)
 
 
 @anvil.server.callable
-def add_dsc_entry(reference,field_id,sequence):
-    return l_add_dsc_entry(reference,field_id,sequence)
+def add_dsc_entry(reference, field_id, sequence):
+    return l_add_dsc_entry(reference, field_id, sequence)
 
 
 @anvil.server.callable
-def update_dsc(id_to_change, reference, field_id,sequence):
+def update_dsc(id_to_change, reference, field_id, sequence):
     l_update_dsc(id_to_change, reference, field_id, sequence)
 
 
 @anvil.server.callable
-def change_status_dsc_by_dsd(dsd_reference,new_status):
-    l_change_status_dsc_by_dsd(dsd_reference,new_status)
+def change_status_dsc_by_dsd(dsd_reference, new_status):
+    l_change_status_dsc_by_dsd(dsd_reference, new_status)
 
 
 @anvil.server.callable
-def change_status_dsc_by_id(id_to_change:int,new_status:int):
-    l_change_status_dsc_by_id(id_to_change,new_status)
-
-@anvil.server.callable
-def get_fd(field_id):
-    a={'Value': 'Schumacher', 'Placeholder': 'Familienname eingeben!'}
-    return a
+def change_status_dsc_by_id(id_to_change: int, new_status: int):
+    l_change_status_dsc_by_id(id_to_change, new_status)
 
 
+# @anvil.server.callable
+# def get_fd(field_id):
+#     a={'Value': 'Schumacher', 'Placeholder': 'Familienname eingeben!'}
+#     return a
 
 
 # ----Client_Data_Main: Document Set Composition --------------
@@ -198,30 +210,35 @@ def update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
     l_update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
 
 
+@anvil.server.callable
+def set_fd(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
+    update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
-def set_fd(user_id, case_id, dsc_id,pl_text,pl_number,pl_boolean):
-    update_cdm_entry(user_id,case_id,dsc_id,pl_text,pl_number,pl_boolean)
+def get_fd(case_id, field_id):  # in Client_data_main
+    return  client_data_main.l_get_fd(case_id, field_id)
 
 
 @anvil.server.callable
-def get_fd(case_id, field_id): #in Client_data_main
-    return l_get_fd(case_id,field_id)
+def select_plz_info_by_plz(PLZ):
+    return l_select_plz_info_by_plz(PLZ)
+
 
 @anvil.server.callable
-def select_plz_info_by_PLZ(PLZ):
-    return l_select_plz_info_by_PLZ(PLZ)
+def select_plz_info_by_id(plz_id):
+    return l_select_plz_info_by_id(plz_id)
 
-@anvil.server.callable
-def select_plz_info_by_ID(plz_id):
-    return l_select_plz_info_by_ID(plz_id)
 
+# ---- functions.py --------------
+@anvil.server.callable()
+def ahv_check(avh_string): # checks for validity of number, returns boolean
+    return l_ahv_check(avh_string)
 
 
 # print(get_languages())
 # last_lang = add_language('en-uk2',
-#                          'English - Vereinigtes Königreich',
+#                           'English - Vereinigtes Königreich',
 #                          'British English',
 #                          '1399c078-6c0f-11ed-b0bc-acde48001122',
 #                          make_timestamp())

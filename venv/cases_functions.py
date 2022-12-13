@@ -93,9 +93,11 @@ def l_get_dsd_reference_for_case_id(ca_id):
     result = cursor.fetchone()
     for r in result:
         dsd=r
-    #print(dsd)
-    #print(ca_id, " ist: dsd:",dsd)
+    print('l_get_dsd_reference_for_case_id',dsd)
+    print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
     return dsd
+
+#print(l_get_dsd_reference_for_case_id(100))
 
 def l_get_user_id_for_case_id(ca_id):
     query="""

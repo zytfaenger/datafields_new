@@ -3,7 +3,7 @@ conn = get_connection()
 
 cursor = conn.cursor()
 
-def l_select_plz_info_by_PLZ(PLZ):
+def l_select_plz_info_by_plz(PLZ):
     query="""
     select  
         PLZ_ID,
@@ -28,7 +28,7 @@ def l_select_plz_info_by_PLZ(PLZ):
 
 #print(l_select_plz_info_by_PLZ(6005))
 
-def l_select_plz_info_by_ID(plz_id):
+def l_select_plz_info_by_id(plz_id):
     query="""
     select  
         PLZ_ID,

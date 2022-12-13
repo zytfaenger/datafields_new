@@ -11,9 +11,9 @@ cursor = conn.cursor()
 
 
 def l_get_label(lang_short,field_id):
-    #print(lang_short,"= sprache")
+    print(lang_short,"= sprache")
     lang_id=l_select_language_by_shortname(lang_short)[0]['lang_id']
-    #print(lang_id)
+    print(lang_id)
     query="""
             select 
              field_desc_label
