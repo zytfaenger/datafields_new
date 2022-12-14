@@ -10,18 +10,6 @@ import language_functions
 import log_functions
 from connections import get_connection
 
-# from language_functions import l_select_language_by_id, l_select_language_by_shortname, l_get_all_languages, \
-#     l_get_active_languages, l_add_language, l_update_language, l_change_status_language_by_short_name, \
-#     l_change_status_language_by_id
-# from field_types import l_change_status_field_type_by_short_name, l_update_field_type, l_add_field_type, \
-#     l_select_field_type_by_id, l_select_field_types_by_shortname, l_get_active_field_types, l_get_all_field_types, \
-#     l_change_status_field_type_by_id
-# from doc_set_definition import *
-# from doc_set_compositions import *
-# from PLZ import l_select_plz_info_by_plz, l_select_plz_info_by_id
-# from functions import l_ahv_check
-# from connections import get_connection
-
 conn = get_connection()
 
 
@@ -224,7 +212,7 @@ def update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
 
 @anvil.server.callable
 def set_fd(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
-    client_data_main.update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
+    client_data_main.l_update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable

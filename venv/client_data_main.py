@@ -268,7 +268,7 @@ def l_get_fd(case_id, field_id):
     print(result)
     return result
 
-print(l_get_fd(case_id=100,field_id=160))
+#print(l_get_fd(case_id=100,field_id=160))
 
 
 
