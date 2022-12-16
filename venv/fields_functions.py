@@ -110,7 +110,7 @@ def l_get_field_sub_group_value_for_id(f_id):
         print('l_get_field_sub_group_value_for_id', sub_group_value)
         return sub_group_value
 
-
+# print(l_get_field_sub_group_value_for_id(230))
 def l_get_field_sub_group_for_id(f_id):
     query = """
         select  

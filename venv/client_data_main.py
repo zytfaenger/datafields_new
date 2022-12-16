@@ -92,19 +92,26 @@ def l_get_active_cdm_entries(case_id, dsc_id_ref):
     return results
 
 
-def l_get_cdm_entry_ID(case_id, dsc_id_ref):
+def l_get_cdm_entry_ID(user_id, case_id, dsc_id_ref):
     # cdm = Client Data Main
+    print("cdm97 - userid, caseId, dsc-id", user_id, case_id, dsc_id_ref)
     query: str = """SELECT 
                         cdm_id 
-                        FROM client_data_main 
+                    FROM 
+                        client_data_main 
                     WHERE case_id_reference=? AND dsc_reference=? 
                     """
     cursor.execute(query,(case_id,dsc_id_ref))
     result = cursor.fetchone()
+    if result == None:
+        print("l_get_cdm_entry_ID no record (cdm 105)")
+        entry = l_add_cdm_entry(user_id,dsc_id_ref,pl_text="Empty")
+        print ("cdm108:entry",entry)
+        return entry
     for row in result:
         a=row
-        print(row)
-    #print(a)
+        # print(row)
+        # print(a)
         return a
 
 
@@ -162,7 +169,8 @@ def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_bool
 def l_update_cdm_entry(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
     print("Update läuft mit folgenden Paras:", user_id,case_id,field_id,pl_text,pl_number,pl_boolean)
     dsc_id=l_select_dsc_id_by_case_and_field(case_id,field_id)
-    id_to_change=l_get_cdm_entry_ID(case_id, dsc_id)
+    print("cdm 169: dsc_id", dsc_id)
+    id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
     current_admin_user=get_user()
     current_timestamp = make_timestamp()
     current_table_name = 'client_data_main'

@@ -5,6 +5,7 @@ import client_data_main
 import doc_set_compositions
 import doc_set_definition
 import field_types
+import fields_functions
 import functions
 import language_functions
 import log_functions
@@ -235,6 +236,11 @@ def select_plz_info_by_id(plz_id):
 def ahv_check(avh_string): # checks for validity of number, returns boolean
     return functions.l_ahv_check(avh_string)
 
+# ---- field.functions.py --------------
+
+@anvil.server.callable()
+def get_field_sub_group_value_for_id(f_id):
+    return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 
 # print(get_languages())
 # last_lang = add_language('en-uk2',
