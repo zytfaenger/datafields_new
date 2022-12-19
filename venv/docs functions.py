@@ -6,22 +6,29 @@ conn = get_connection()
 
 cursor = conn.cursor()
 
-def l_get_active_cases():
+def l_get_active_docs():
     query: str = """SELECT 
-                        case_id, 
-                        client_id_ref, 
-                        dsd_reference, 
-                        language_ref, 
-                        user_id, 
+                        doc_id, 
+                        case_id_reference, 
+                        field_id_reference, 
+                        doc_desc_short, 
+                        doc_desc_long, 
+                        doc_version, 
+                        doc_date, 
+                        doc_file, 
+                        doc_pending, 
+                        doc_valid, 
+                        doc_next_version, 
+                        doc_previous_version,
                         admin_user, 
                         admin_timestamp, 
                         admin_previous_entry, 
-                        admin_active  
+                        admin_active
                     FROM 
-                        EasyEL.dbo.cases 
+                        docs
                     WHERE 
                         admin_active=1 
-                    ORDER BY user_id"""
+                    ORDER BY case_id_reference,field_id_reference"""
 
     cursor.execute(query)
     columns = [column[0] for column in cursor.description]
@@ -32,44 +39,58 @@ def l_get_active_cases():
     return results
 
 
-def l_get_all_cases():
+def l_get_all_docs():
     query: str = """SELECT 
-                        case_id, 
-                        client_id_ref, 
-                        dsd_reference, 
-                        language_ref, 
-                        user_id, 
-                        admin_user, 
-                        admin_timestamp, 
-                        admin_previous_entry, 
-                        admin_active  
-                    FROM 
-                        EasyEL.dbo.cases 
-                    ORDER BY user_id"""
-
-    cursor.execute(query)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-
-
-def l_select_case_by_id(id):
-    cursor.execute("""select 
-                            case_id, 
-                            client_id_ref, 
-                            dsd_reference, 
-                            language_ref, 
-                            user_id, 
+                            doc_id, 
+                            case_id_reference, 
+                            field_id_reference, 
+                            doc_desc_short, 
+                            doc_desc_long, 
+                            doc_version, 
+                            doc_date, 
+                            doc_file, 
+                            doc_pending, 
+                            doc_valid, 
+                            doc_next_version, 
+                            doc_previous_version,
                             admin_user, 
                             admin_timestamp, 
                             admin_previous_entry, 
-                            admin_active 
+                            admin_active
+                        FROM 
+                            docs
+                        ORDER BY case_id_reference,field_id_reference"""
+
+    cursor.execute(query)
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+
+def l_select_doc_by_id(id):
+    cursor.execute("""select 
+                           doc_id, 
+                            case_id_reference, 
+                            field_id_reference, 
+                            doc_desc_short, 
+                            doc_desc_long, 
+                            doc_version, 
+                            doc_date, 
+                            doc_file, 
+                            doc_pending, 
+                            doc_valid, 
+                            doc_next_version, 
+                            doc_previous_version,
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active
                         from 
-                            EasyEL.dbo.cases 
-                        where case_id=?""", id)
+                            docs 
+                        where doc_id=?""", id)
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
@@ -82,84 +103,75 @@ def l_select_case_by_id(id):
 
 
 
-def l_get_dsd_reference_for_case_id(ca_id):
+def l_get_docs_for_case_id(ca_id):
     query="""
-        select dsd_reference 
+        select 
+                doc_id, 
+                case_id_reference, 
+                field_id_reference, 
+                doc_desc_short, 
+                doc_desc_long, 
+                doc_version, 
+                doc_date, 
+                doc_file, 
+                doc_pending, 
+                doc_valid, 
+                doc_next_version, 
+                doc_previous_version,
+                admin_user, 
+                admin_timestamp, 
+                admin_previous_entry, 
+                admin_active
         from
-         EasyEL.dbo.cases
+         docs
         where
-         case_id=?   
+         case_id_reference=?   
     """
     cursor.execute(query,ca_id)
-    result = cursor.fetchone()
-    for r in result:
-        dsd=r
-    print('l_get_dsd_reference_for_case_id',dsd)
-    print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
-    return dsd
-
-#print(l_get_dsd_reference_for_case_id(100))
-
-def l_get_user_id_for_case_id(ca_id):
-    query="""
-        select user_id 
-        from
-         EasyEL.dbo.cases
-        where
-         case_id=?   
-    """
-    cursor.execute(query,ca_id)
-    result = cursor.fetchone()
-    for r in result:
-        user_id=r
-    #print(dsd)
-    #print(ca_id, " ist: dsd:",dsd)
-    return user_id
-
-def l_get_client_id_for_case_id(ca_id):
-    query="""
-        select client_id_ref 
-        from
-         EasyEL.dbo.cases
-        where
-         case_id=?   
-    """
-    cursor.execute(query,ca_id)
-    result = cursor.fetchone()
-    for r in result:
-        client_id=r
-    #print(dsd)
-    #print(ca_id, " ist: dsd:",dsd)
-    return client_id
-
-def l_select_language_by_case_id(case_id):
-    cursor.execute("""select 
-                        cases.Case_ID,
-                        cases.language_ref,
-                        dbo.languages.lang_short
-                       from 
-                            EasyEL.dbo.cases
-                                inner join dbo.languages on languages.lang_id = EasyEL.dbo.cases.language_ref
-                        where 
-                            cases.case_id=?""",
-                       case_id)
     columns = [column[0] for column in cursor.description]
-    # print(columns)
     results = []
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
-    # print(results[0])
-    return results[0]['lang_short']
+        # print(results[0])
+    if results == []:
+        return None
+    else:
+        return results[0]
 
-#print(l_get_dsd_reference_for_case_id(110))
 
+# print(l_get_docs_for_case_id(100))
+
+def l_get_docs_for_a_field_by_case(field_id, ca_id):
+    print("Not defined yet")
+
+def l_get_case_id_client_id_for_doc_id(d_id):
+    query="""
+        select 
+         case_id_reference,
+         cases.client_id_ref
+        from
+         docs
+            inner join EasyEL.dbo.cases on case_id = EasyEL.dbo.docs.case_id_reference
+        where
+         doc_id=?   
+    """
+    cursor.execute(query,d_id)
+    result = cursor.fetchone()
+    rlist=[]
+    for r in result:
+        rlist.append(r)
+
+    print(rlist)
+    return rlist  # case_id first, then client_id
+
+# print(l_get_case_id_client_id_for_doc_id(1))
 
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 
 
 
-def l_add_case(client_id,dsd_reference,language_ref,user_id):
+def l_add_doc(client_id,dsd_reference,language_ref,user_id):
     admin_user=get_user()
     timestamp=make_timestamp()
     query= """insert into 
