@@ -4,6 +4,7 @@ conn = get_connection()
 cursor = conn.cursor()
 
 def l_select_plz_info_by_plz(PLZ):
+
     query="""
     select  
         PLZ_ID,

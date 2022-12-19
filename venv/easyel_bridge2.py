@@ -212,13 +212,17 @@ def update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
 
 
 @anvil.server.callable
-def set_fd(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
-    client_data_main.l_update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
+def set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean):
+    client_data_main.l_update_cdm_entry(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
 def get_fd(case_id, field_id):  # in Client_data_main
-    return  client_data_main.l_get_fd(case_id, field_id)
+    return client_data_main.l_get_fd(case_id, field_id)
+
+@anvil.server.callable
+def get_fd_all(case_id, field_id):  # in Client_data_main
+    return client_data_main.l_get_fd_all(case_id, field_id)
 
 
 @anvil.server.callable

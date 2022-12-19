@@ -264,10 +264,12 @@ def l_get_fd(case_id, field_id):
     if payload == None:
         print("No record found")
         l_add_cdm_entry(current_userID, case_id, current_dsc, pl_text="Empty", pl_number=0, pl_boolean=1)
-        print('missing cdm record added:!')
-        cursor.execute(query,current_dsc)
-        payload=cursor.fetchone()
+        print('missing cdm record added!')
+        cursor2=conn.cursor()
+        cursor2.execute(query,current_dsc)
+        payload=cursor2.fetchone()
         print('New payload:',payload)
+    print(payload)
     result['payload']=payload[0]
     print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
     print(l_get_label(current_lang, field_id))
@@ -278,6 +280,46 @@ def l_get_fd(case_id, field_id):
 
 #print(l_get_fd(case_id=100,field_id=160))
 
+def l_get_fd_all(case_id, field_id):
+    print("l_get_fd, parameters:",case_id, field_id)
+    current_dsd=l_get_dsd_reference_for_case_id(case_id)
+    current_lang=l_select_language_by_case_id(case_id)
+    current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
+    current_userID=l_get_user_id_for_case_id(case_id)
+    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+    result= {}
+    query= """select 
+                payload_text,
+                payload_number,
+                payload_boolean
+              from 
+                client_data_main
+              where
+                dsc_reference=?
+            """
+    cursor.execute(query,current_dsc)
+    payload= cursor.fetchone()
+    print("Payload", payload)
+
+    print('get_fd_all payload',payload)
+    if payload == None:
+        print("No record found")
+        l_add_cdm_entry(current_userID, case_id, current_dsc, pl_text="Empty", pl_number=0, pl_boolean=0)
+        print('missing cdm record added!')
+        cursor2=conn.cursor()
+        cursor2.execute(query,current_dsc)
+        payload=cursor2.fetchone()
+        print('New payload:',payload)
+    print(payload)
+    result['payload_text']=payload[0]
+    result['payload_number']=payload[1]
+    result['payload_boolean'] = payload[2]
+    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
+    print(l_get_label(current_lang, field_id))
+    result['label']=l_get_label(current_lang,field_id)
+    result['prompt']=l_get_prompt(current_lang,field_id)
+    print(result)
+    return result
 
 
 
