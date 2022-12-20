@@ -30,6 +30,26 @@ def l_get_label(lang_short,field_id):
     else:
         return label[0]
 
+def l_get_label_by_id(lang_id,field_id):
+    query="""
+            select 
+             field_desc_label
+            from 
+             field_descriptions
+            where 
+             language_id_reference=? AND field_id_reference=?   
+        """
+    #print(query)
+    cursor.execute(query,(lang_id,field_id))
+    label = cursor.fetchone()
+    if label is None:
+        return None
+    else:
+        return label[0]
+
+
+
+
 #print(get_label('D-CH',120))
 
 def l_get_prompt(lang_short,field_id):
@@ -53,3 +73,20 @@ def l_get_prompt(lang_short,field_id):
         return prompt[0]
 
 #print(get_label('D-CH',120))
+
+def l_get_prompt_by_id(lang_id,field_id):
+    query="""
+            select 
+             field_desc_prompt
+            from 
+             field_descriptions
+            where 
+             language_id_reference=? AND field_id_reference=?   
+        """
+    #print(query)
+    cursor.execute(query,(lang_id,field_id))
+    prompt=cursor.fetchone()
+    if prompt is None:
+        return None
+    else:
+        return prompt[0]

@@ -1,3 +1,6 @@
+- Install
+- 
+- 
 - Funktionen schreiben für:
   - Add
   - Edit

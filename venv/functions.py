@@ -5,11 +5,12 @@ def multiplyfs(x:float,y:float):
     return(x*y)
 import uuid
 import time
+import datetime
 import calendar
 import secrets
 import string
 import cryptography
-from cryptography.fernet import Fernet
+from  cryptography.fernet import Fernet
 
 def generate_key():
     return Fernet.generate_key()
@@ -47,6 +48,11 @@ def make_timestamp():
     #Returns current gmttime as Integer
     now = time.gmtime()
     return calendar.timegm(now)
+
+def get_current_date_as_string():
+    return datetime.date.today().strftime('%Y-%m-%d')
+
+
 
 def get_user():
     # just as temorary_measure

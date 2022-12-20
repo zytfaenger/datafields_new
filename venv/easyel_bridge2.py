@@ -1,9 +1,11 @@
 import anvil.server
 
 import PLZ
+import cases_functions
 import client_data_main
 import doc_set_compositions
 import doc_set_definition
+import docs_functions
 import field_types
 import fields_functions
 import functions
@@ -48,7 +50,7 @@ def select_language_by_id(lang_id):
 
 @anvil.server.callable()
 def select_language_by_case(case_id):
-    return functions.l_select_language_by_case_id(case_id)
+    return cases_functions.l_select_language_by_case_id(case_id)
 
 
 
@@ -245,6 +247,11 @@ def ahv_check(avh_string): # checks for validity of number, returns boolean
 @anvil.server.callable()
 def get_field_sub_group_value_for_id(f_id):
     return fields_functions.l_get_field_sub_group_value_for_id(f_id)
+
+@anvil.server.callable()
+def ensure_doc():
+    return docs_functions.l_ensure_doc()
+
 
 # print(get_languages())
 # last_lang = add_language('en-uk2',
