@@ -15,7 +15,7 @@ def l_get_active_docs():
                         doc_desc_long, 
                         doc_version, 
                         doc_date, 
-                        doc_file, 
+                        doc_file_ref, 
                         doc_pending, 
                         doc_valid, 
                         doc_next_version, 
@@ -48,7 +48,7 @@ def l_get_all_docs():
                             doc_desc_long, 
                             doc_version, 
                             doc_date, 
-                            doc_file, 
+                            doc_file_ref, 
                             doc_pending, 
                             doc_valid, 
                             doc_next_version, 
@@ -79,7 +79,7 @@ def l_select_doc_by_id(id):
                             doc_desc_long, 
                             doc_version, 
                             doc_date, 
-                            doc_file, 
+                            doc_file_ref, 
                             doc_pending, 
                             doc_valid, 
                             doc_next_version, 
@@ -113,7 +113,7 @@ def l_get_docs_for_case_id(ca_id):
                 doc_desc_long, 
                 doc_version, 
                 doc_date, 
-                doc_file, 
+                doc_file_ref, 
                 doc_pending, 
                 doc_valid, 
                 doc_next_version, 
@@ -171,34 +171,77 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
 
 
 
-def l_add_doc(client_id,dsd_reference,language_ref,user_id):
+def l_add_doc(cs_id,
+              fld_id,
+              desc_s,
+              d_date,
+              desc_l="Empty",
+              vrs=1,
+              d_file_ref="None",
+              d_pend=1,
+              d_valid=1,
+              doc_n_vers=0,
+              doc_p_ver=0):
     admin_user=get_user()
     timestamp=make_timestamp()
     query= """insert into 
-                     EasyEL.dbo.cases (client_id_ref, 
-                                        dsd_reference, 
-                                        language_ref, 
-                                        user_id, 
-                                        admin_user, 
-                                        admin_timestamp, 
-                                        admin_previous_entry, 
-                                        admin_active)
-                                       values (?,?,?,?,?,?,?,?)"""
-    cursor.execute(query,(client_id,dsd_reference,language_ref,user_id, admin_user, timestamp,0,1))
+                     docs (
+                     case_id_reference, 
+                     field_id_reference, 
+                     doc_desc_short, 
+                     doc_date,  
+                     doc_desc_long, 
+                     doc_version, 
+                     doc_file_ref, 
+                     doc_pending, 
+                     doc_valid, 
+                     doc_next_version, 
+                     doc_previous_version,
+                     admin_user, 
+                     admin_timestamp, 
+                     admin_previous_entry, 
+                     admin_active 
+                  )
+                                       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+    cursor.execute(query,(cs_id,
+                          fld_id,
+                          desc_s,
+                          d_date,
+                          desc_l,
+                          vrs,
+                          d_file_ref,
+                          d_pend,
+                          d_valid,
+                          doc_n_vers,
+                          doc_p_ver,
+                          admin_user,
+                          timestamp,
+                          0,
+                          1))
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
     return last_id
 
-#l_add_case(110,100,1,100)
+# l_add_doc(100,530,"Ehevertrag",'2022-12-20')
 
-def l_update_cases(id_to_change, client_id_ref,dsd_reference,language_ref,user_id):
-    #print('l_updateft:',id_to_change,type,description,sequence)
+def l_update_doc_by_id(id_to_change,
+              ccs_id,
+              fld_id,
+              desc_s,
+              d_date,
+              desc_l="Empty",
+              vrs=1,
+              d_file_ref="None",
+              d_pend=1,
+              d_valid=1,
+              doc_n_vers=0,
+              doc_p_ver=0):
     current_adminuser=get_user()
     current_timestamp = make_timestamp()
-    current_table_name = 'cases'
+    current_table_name = 'docs'
     current_table_id=id_to_change
-    current_payload=str(l_select_case_by_id(id_to_change))
+    current_payload=str(l_select_doc_by_id(id_to_change))
     #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
     previous_log_entry=add_log_entry(current_adminuser,
                                      current_timestamp,
@@ -208,33 +251,56 @@ def l_update_cases(id_to_change, client_id_ref,dsd_reference,language_ref,user_i
     #print(previous_log_entry)
     cursor3=conn.cursor()
     query="""   UPDATE 
-                    cases 
+                    docs 
                 SET 
-                    client_id_ref=?,
-                    dsd_reference=?,
-                    language_ref=?,
-                    user_id=?,
-                    admin_user=?,
-                    admin_timestamp=?,
-                    admin_previous_entry=?,
-                    admin_active=?
+                    case_id_reference=?, 
+                    field_id_reference=?, 
+                    doc_desc_short=?,  
+                    doc_date=?, 
+                    doc_desc_long=?, 
+                    doc_version=?, 
+                    doc_file_ref=?, 
+                    doc_pending=?,  
+                    doc_valid=?,  
+                    doc_next_version=?, 
+                    doc_previous_version=?, 
+                    admin_user=?,  
+                    admin_timestamp=?, 
+                    admin_previous_entry=?,  
+                    admin_active=? 
                 WHERE 
-                    EasyEL.dbo.cases.case_id=?"""
-    cursor.execute(query, (client_id_ref, dsd_reference, language_ref, user_id, current_adminuser, current_timestamp, previous_log_entry,1, id_to_change))
+                    docs.doc_id=?"""
+    cursor.execute(query,
+                   (ccs_id,
+                    fld_id,
+                    desc_s,
+                    d_date,
+                    desc_l,
+                    vrs,
+                    d_file_ref,
+                    d_pend,
+                    d_valid,
+                    doc_n_vers,
+                    doc_p_ver,
+                    current_adminuser,
+                    current_timestamp,
+                    previous_log_entry,
+                    1,
+                    id_to_change))
     cursor3.commit()
 
 
-#l_update_cases(160, 110,100,1,100)
+# l_update_doc_by_id(1,100,530,"Ehevertrag","2022-12-20","Ehevertrag vom 12.12.2022")
 
 
 
-def l_change_status_case_by_id(id_to_change:int,new_status:int):
+def l_change_status_doc_by_id(id_to_change,new_status):
     current_user=get_user()
     #print(current_user)
     current_timestamp = make_timestamp()
-    current_table_name = 'cases'
+    current_table_name = 'docs'
     current_table_id=id_to_change
-    current_payload=str(l_select_case_by_id(id_to_change))
+    current_payload=str(l_select_doc_by_id(id_to_change))
     #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
     previous_log_entry=add_log_entry(current_user,
                                      current_timestamp,
@@ -245,12 +311,46 @@ def l_change_status_case_by_id(id_to_change:int,new_status:int):
 
 
     cursor.execute("""  UPDATE 
-                            EasyEL.dbo.cases 
+                            docs 
                         SET 
                             admin_user=?,
                             admin_timestamp=?,
                             admin_previous_entry=?,
                             admin_active=? 
-                        WHERE case_id=?""",
+                        WHERE doc_id=?""",
                        (current_user,current_timestamp,previous_log_entry,new_status,id_to_change))
     cursor.commit()
+
+def l_update_doc_by_field_by_id(id_to_change, newvals): # gets a list of fieldnames and valuse [('a', 100), ('b', 200)]
+    print(newvals)
+    if newvals==None:
+        pass
+    else:
+        current_adminuser = get_user()
+        current_timestamp = make_timestamp()
+        current_table_name = 'docs'
+        current_table_id = id_to_change
+        current_payload = str(l_select_doc_by_id(id_to_change))
+        # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+        previous_log_entry = add_log_entry(current_adminuser,
+                                           current_timestamp,
+                                           current_table_name,
+                                           current_table_id,
+                                           current_payload)
+        # print(previous_log_entry)
+        cursor3 = conn.cursor()
+
+    for f,v in newvals:
+        print(f,v)
+        query = """UPDATE 
+                        docs 
+                    SET 
+                        ? = ? 
+                    WHERE 
+                        docs.doc_id = ?"""
+        print(query)
+        cursor3.execute(query,(f,v,id_to_change))
+        cursor3.commit()
+        print(cursor.description)
+
+l_update_doc_by_field_by_id(1,[("dbo.docs.doc_desc_short","Divorce Agreement2222")])
