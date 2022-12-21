@@ -153,6 +153,24 @@ def l_select_language_by_case_id(case_id):
 #print(l_get_dsd_reference_for_case_id(110))
 
 
+def l_select_language_id_from_case_id(case_id):
+    cursor.execute("""select 
+                        cases.language_ref
+                        from
+                            EasyEL.dbo.cases
+                        where 
+                            cases.case_id=?""",
+                       case_id)
+    res=cursor.fetchone()
+    if res is None:
+        return None
+    else:
+        return res[0]
+
+# print(l_select_language_id_from_case_id(100))
+
+
+
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 

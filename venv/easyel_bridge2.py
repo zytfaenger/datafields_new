@@ -249,8 +249,8 @@ def get_field_sub_group_value_for_id(f_id):
     return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 
 @anvil.server.callable()
-def ensure_doc():
-    return docs_functions.l_ensure_doc()
+def ensure_doc(case_id, field_id):
+    return docs_functions.l_ensure_doc(case_id, field_id)
 
 
 # print(get_languages())
