@@ -16,8 +16,8 @@ from connections import get_connection
 conn = get_connection()
 
 
-anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')
-
+# anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules
+anvil.server.connect('server_UN23KJQADJA7XYELHWDPHW23-F6JMSXNZ36WYEYKQ')  #admin
 
 # -------- Logging----------#
 
@@ -50,7 +50,7 @@ def select_language_by_id(lang_id):
 
 @anvil.server.callable()
 def select_language_by_case(case_id):
-    return cases_functions.l_select_language_by_case_id(case_id)
+    return cases_functions.l_select_language_short_by_case_id(case_id)
 
 
 
@@ -80,6 +80,10 @@ def change_status_language_by_id(id_to_change: int, new_status: int):
 def get_active_field_types():
     return field_types.l_get_active_field_types()
 
+@anvil.server.callable
+def get_active_field_types_for_dd():
+    return field_types.l_get_active_field_types_for_dd()
+
 
 @anvil.server.callable
 def get_all_field_types():
@@ -103,7 +107,7 @@ def add_field_type(ft_type, description, sequence):
 
 
 @anvil.server.callable
-def update_field_type(id_to_change, ft_type, description, sequence):
+def update_fd_type(id_to_change, ft_type, description, sequence):
     # print("update fieldtype",id_to_change,type,description,sequence)
     field_types.l_update_field_type(id_to_change, ft_type, description, sequence)
 
@@ -116,6 +120,85 @@ def change_status_field_type_by_short_name(ft_type, new_status: int):
 @anvil.server.callable
 def change_status_field_type_by_id(id_to_change: int, new_status: int):
     field_types.l_change_status_field_type_by_id(id_to_change, new_status)
+
+# -------- Field functions ----------#
+
+@anvil.server.callable
+def get_active_fields():
+    return fields_functions.l_get_active_fields()
+
+@anvil.server.callable
+def get_all_fields():
+    return fields_functions.l_get_all_fields()
+
+@anvil.server.callable
+def l_get_active_fields_for_dd(filter="%"):
+    return fields_functions.l_get_active_fields_for_dd(filter)
+
+
+@anvil.server.callable
+def select_field_by_id(f_id):
+    return fields_functions.l_select_field_by_id(f_id)
+
+@anvil.server.callable
+def get_field_sub_group_value_for_id(f_id):
+    return fields_functions.l_get_field_sub_group_value_for_id(f_id)
+# print(l_get_field_sub_group_value_for_id(230))
+@anvil.server.callable
+def get_field_sub_group_for_id(f_id):
+    return fields_functions.l_get_field_sub_group_for_id(f_id)
+
+@anvil.server.callable
+def add_field(
+            fd_typ_id,
+            fd_name,
+            fd_description,
+            fd_sequence,
+            ft_field_group="Case",
+            ft_group_order=1,
+            ft_subgroup=None,
+            ft_sub_group_value=None):
+        return fields_functions.l_add_field(
+            fd_typ_id,
+            fd_name,
+            fd_description,
+            fd_sequence,
+            ft_field_group="Case",
+            ft_group_order=1,
+            ft_subgroup=None,
+            ft_sub_group_value=None)
+
+
+@anvil.server.callable
+def update_field(id_to_change,
+                   fd_typ_id,
+                   fd_name,
+                   fd_description,
+                   fd_sequence,
+                   fd_group="Case",
+                   fd_group_order=1,
+                   fd_sub_group=None,
+                   fd_sub_group_value=None):
+
+    fields_functions.l_update_field(
+            id_to_change,
+           fd_typ_id,
+           fd_name,
+           fd_description,
+           fd_sequence,
+           fd_group="Case",
+           fd_group_order=1,
+           fd_sub_group=None,
+           fd_sub_group_value=None)
+
+
+
+# Zuerst entsprechendes Feld erzeugen!
+# l_update_field(290, 100,"Test2","das ist ein Testfeld2",2)
+
+@anvil.server.callable
+def change_status_field_id(id_to_change, new_status):
+    fields_functions.l_change_status_field_id(id_to_change, new_status)
 
 
 # ----Doc Set Definition: Document Set Definition
@@ -251,6 +334,7 @@ def get_field_sub_group_value_for_id(f_id):
 @anvil.server.callable()
 def ensure_doc(case_id, field_id):
     return docs_functions.l_ensure_doc(case_id, field_id)
+
 
 
 # print(get_languages())

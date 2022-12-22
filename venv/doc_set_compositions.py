@@ -59,7 +59,7 @@ def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
     WHERE
     (dsd_id = ?) AND (languages.lang_short = ?) AND ((field_types.ft_stores_data=1) OR (field_types.ft_stores_state=1))
     ORDER BY
-    dbo.doc_set_comp.dsc_sequence ASC"""
+    dbo.doc_set_comp.dsc_sequence """
     cursor.execute(query,(case_dsd,case_language))
     columns = [column[0] for column in cursor.description]
     # print(columns)
@@ -71,7 +71,7 @@ def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
 
 #unregistered yet
 
-def l_select_required_form_data(dsc_id, case_language,):
+def l_select_required_form_data(case_dsd,dsc_id, case_language,):   #<--- not working
     query="""
     SELECT
         doc_set_comp.dsc_sequence,
@@ -90,10 +90,10 @@ def l_select_required_form_data(dsc_id, case_language,):
             INNER JOIN dbo.field_descriptions ON dbo.fields.field_id = dbo.field_descriptions.field_id_reference
             INNER JOIN dbo.languages ON dbo.field_descriptions.language_id_reference = dbo.languages.lang_id
     WHERE
-    (dsd_id = ?) AND (dsd_id = ?) And (languages.lang_short = ?)
+    (dsd_id = ?) AND (dsc_id = ?) And (languages.lang_short = ?)
     ORDER BY
-    dbo.doc_set_comp.dsc_sequence ASC"""
-    cursor.execute(query,(case_dsd,case_language))
+    dbo.doc_set_comp.dsc_sequence """
+    cursor.execute(query,(case_dsd,dsc_id,case_language))
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
@@ -133,7 +133,7 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
         return result[0]
             #print(results[0]
 
-#print(l_select_dsc_id_by_case_and_field(100,110))
+print(l_select_dsc_id_by_case_and_field(100,300))
 
 
 

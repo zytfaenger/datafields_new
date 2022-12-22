@@ -11,7 +11,9 @@ def l_get_active_cases():
                         client_id_ref, 
                         dsd_reference, 
                         language_ref, 
-                        user_id, 
+                        user_id,
+                        shadow_case_id,
+                        shadow_case_indicator,
                         admin_user, 
                         admin_timestamp, 
                         admin_previous_entry, 
@@ -37,7 +39,9 @@ def l_get_all_cases():
                         client_id_ref, 
                         dsd_reference, 
                         language_ref, 
-                        user_id, 
+                        user_id,
+                        shadow_case_id,
+                        shadow_case_indicator,
                         admin_user, 
                         admin_timestamp, 
                         admin_previous_entry, 
@@ -62,6 +66,8 @@ def l_select_case_by_id(id):
                             dsd_reference, 
                             language_ref, 
                             user_id, 
+                            shadow_case_id,
+                            shadow_case_indicator,
                             admin_user, 
                             admin_timestamp, 
                             admin_previous_entry, 
@@ -91,10 +97,11 @@ def l_get_dsd_reference_for_case_id(ca_id):
     """
     cursor.execute(query,ca_id)
     result = cursor.fetchone()
+    dsd = None
     for r in result:
         dsd=r
-    print('l_get_dsd_reference_for_case_id',dsd)
-    print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
+    # print('l_get_dsd_reference_for_case_id',dsd)
+    # print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
     return dsd
 
 #print(l_get_dsd_reference_for_case_id(100))
@@ -109,6 +116,7 @@ def l_get_user_id_for_case_id(ca_id):
     """
     cursor.execute(query,ca_id)
     result = cursor.fetchone()
+    user_id=None
     for r in result:
         user_id=r
     #print(dsd)
@@ -125,13 +133,57 @@ def l_get_client_id_for_case_id(ca_id):
     """
     cursor.execute(query,ca_id)
     result = cursor.fetchone()
+    client_id=None
     for r in result:
         client_id=r
     #print(dsd)
     #print(ca_id, " ist: dsd:",dsd)
     return client_id
 
-def l_select_language_by_case_id(case_id):
+
+def l_get_shadow_case_id_for_case_id(ca_id):
+    query= """
+        select shadow_case_id 
+        from
+         EasyEL.dbo.cases
+        where
+         case_id=?   
+    """
+    cursor.execute(query,ca_id)
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        shadow_case_id = None
+        for r in result:
+            shadow_case_id=r
+        return shadow_case_id
+
+
+def l_get_shadow_case_indicator_for_case_id(ca_id):
+    query= """
+        select shadow_case_indicator
+        from
+         EasyEL.dbo.cases
+        where
+         case_id=?   
+    """
+    cursor.execute(query,ca_id)
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        shadow_case_ind = None
+        for r in result:
+            shadow_case_ind=r
+        return shadow_case_ind
+
+# print(l_get_shadow_case_id_for_case_id(170))
+# print(l_get_shadow_case_indicator_for_case_id(170))
+# print(l_get_shadow_case_id_for_case_id(100))
+# print(l_get_shadow_case_indicator_for_case_id(100))
+
+def l_select_language_short_by_case_id(case_id):
     cursor.execute("""select 
                         cases.Case_ID,
                         cases.language_ref,
@@ -176,28 +228,60 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
 
 
 
-def l_add_case(client_id,dsd_reference,language_ref,user_id):
+def l_add_case(client_id, dsd_reference, language_ref, user_id, shdw_case_ind=0):
     admin_user=get_user()
     timestamp=make_timestamp()
     query= """insert into 
                      EasyEL.dbo.cases (client_id_ref, 
                                         dsd_reference, 
                                         language_ref, 
-                                        user_id, 
+                                        user_id,
+                                        shadow_case_id,
+                                        shadow_case_indicator,
                                         admin_user, 
                                         admin_timestamp, 
                                         admin_previous_entry, 
                                         admin_active)
-                                       values (?,?,?,?,?,?,?,?)"""
-    cursor.execute(query,(client_id,dsd_reference,language_ref,user_id, admin_user, timestamp,0,1))
+                                       values (?,?,?,?,?,?,?,?,?,?)"""
+    cursor.execute(query,(client_id,dsd_reference,language_ref,user_id, 0,shdw_case_ind, admin_user, timestamp,0,1))
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
     return last_id
 
-#l_add_case(110,100,1,100)
+#l_add_case(110,100,1,100,0)
 
-def l_update_cases(id_to_change, client_id_ref,dsd_reference,language_ref,user_id):
+
+def l_add_shadow_case(client_id,language_ref,user_id,dsd_reference=120,shdw_case_ind=1):
+    return (client_id,dsd_reference,language_ref,user_id,1)
+
+def l_update_cases_shadow_case_id(client_id,shdw_case_id):
+    current_user = get_user()
+    current_timestamp = make_timestamp()
+    current_table_name = 'cases'
+    current_table_id = client_id
+    current_payload = str(l_select_case_by_id(client_id))
+    # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+    previous_log_entry = add_log_entry(current_user,
+                                       current_timestamp,
+                                       current_table_name,
+                                       current_table_id,
+                                       current_payload)
+    # print(previous_log_entry)
+
+    cursor.execute("""  UPDATE 
+                               EasyEL.dbo.cases 
+                           SET 
+                               shadow_case_id=?
+                           WHERE 
+                           client_id_ref = ? and case_id <> ? """,
+                   (shdw_case_id, client_id, shdw_case_id))
+    cursor.commit()
+
+l_update_cases_shadow_case_id(110,170)
+
+
+def l_update_cases(id_to_change, client_id_ref, dsd_reference, language_ref, user_id):
     #print('l_updateft:',id_to_change,type,description,sequence)
     current_adminuser=get_user()
     current_timestamp = make_timestamp()
@@ -219,13 +303,14 @@ def l_update_cases(id_to_change, client_id_ref,dsd_reference,language_ref,user_i
                     dsd_reference=?,
                     language_ref=?,
                     user_id=?,
+                    shadow_case_id=?,
                     admin_user=?,
                     admin_timestamp=?,
                     admin_previous_entry=?,
                     admin_active=?
                 WHERE 
                     EasyEL.dbo.cases.case_id=?"""
-    cursor.execute(query, (client_id_ref, dsd_reference, language_ref, user_id, current_adminuser, current_timestamp, previous_log_entry,1, id_to_change))
+    cursor.execute(query, (client_id_ref, dsd_reference, language_ref, user_id, 0, current_adminuser, current_timestamp, previous_log_entry,1, id_to_change))
     cursor3.commit()
 
 

@@ -15,6 +15,25 @@ def l_get_active_field_types():
         results.append(dict(zip(columns, row)))
     return results
 
+def l_get_active_field_types_for_dd():
+    query: str = """SELECT  
+                        ft_type,
+                        ft_description,
+                        ft_id
+                    from 
+                        dbo.field_types 
+                    where 
+                        admin_active=1 order by ft_sequence"""
+    cursor.execute(query)
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        entry = row[0]+": "+row[1]
+        list=(entry,row[2])
+        results.append(list)
+    return results
+
+#print(l_get_active_field_types_for_dd())
 
 def l_get_all_field_types():
     query: str = "select ft_id, ft_type, ft_description, ft_sequence, admin_user, admin_previous_entry, admin_active, admin_timestamp  from dbo.field_types order by ft_sequence"

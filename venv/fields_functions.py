@@ -36,6 +36,25 @@ def l_get_active_fields():
         results.append(dict(zip(columns, row)))
     return results
 
+def l_get_active_fields_for_dd(filter="%"):
+    query: str = """SELECT 
+                        field_name,
+                        field_id
+                    FROM 
+                        fields 
+                    WHERE 
+                        admin_active=? and field_name like ?
+                    ORDER BY field_sequence"""
+
+    cursor.execute(query,1,filter)
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+#print(l_get_active_fields_for_dd(filter="%La%"))
 
 def l_get_all_fields():
     query: str = """SELECT 

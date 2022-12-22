@@ -1,9 +1,10 @@
+import cases_functions
 from functions import make_timestamp, get_user, get_user_id
 from log_functions import log_add_log_entry
 from connections import get_connection
 from doc_set_definition import l_select_dsd_by_case, l_select_dsd_by_id
 from doc_set_compositions import l_select_dsc_to_store_for_dsd,l_select_dsc_id_by_case_and_field
-from cases_functions import l_get_dsd_reference_for_case_id,l_select_language_by_case_id, l_get_user_id_for_case_id
+from cases_functions import l_get_dsd_reference_for_case_id,l_select_language_short_by_case_id, l_get_user_id_for_case_id
 from field_descriptions import l_get_label, l_get_prompt
 conn = get_connection()
 
@@ -225,7 +226,7 @@ def l_change_status_dsd_by_id(id_to_change:int,new_status:int):
 def l_ensure_completeness_of_stores(case_id):
     current_user=get_user_id()
     current_dsd_id = l_select_dsd_by_case(case_id)
-    current_language_short=l_select_language_by_case_id(case_id)
+    current_language_short=l_select_language_short_by_case_id(case_id)
     current_docsets = l_select_dsc_to_store_for_dsd(current_dsd_id, current_language_short)
     counter=0
     for ds in current_docsets:
@@ -241,52 +242,15 @@ def l_ensure_completeness_of_stores(case_id):
         else:
             print(current_dsc_id, " exists!")
 
-def l_get_fd(case_id, field_id):
-    print("l_get_fd, parameters:",case_id, field_id)
-    current_dsd=l_get_dsd_reference_for_case_id(case_id)
-    current_lang=l_select_language_by_case_id(case_id)
-    current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
-    current_userID=l_get_user_id_for_case_id(case_id)
-    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
-    result= {}
-    query= """select 
-                payload_text
-              from 
-                client_data_main
-              where
-                dsc_reference=?
-            """
-    cursor.execute(query,current_dsc)
-    payload= cursor.fetchone()
-    print("Payload", payload)
-
-    print('get_fd payload',payload)
-    if payload == None:
-        print("No record found")
-        l_add_cdm_entry(current_userID, case_id, current_dsc, pl_text="Empty", pl_number=0, pl_boolean=1)
-        print('missing cdm record added!')
-        cursor2=conn.cursor()
-        cursor2.execute(query,current_dsc)
-        payload=cursor2.fetchone()
-        print('New payload:',payload)
-    print(payload)
-    result['payload']=payload[0]
-    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-    print(l_get_label(current_lang, field_id))
-    result['label']=l_get_label(current_lang,field_id)
-    result['prompt']=l_get_prompt(current_lang,field_id)
-    print(result)
-    return result
-
-#print(l_get_fd(case_id=100,field_id=160))
 
 def l_get_fd_all(case_id, field_id):
     print("l_get_fd, parameters:",case_id, field_id)
     current_dsd=l_get_dsd_reference_for_case_id(case_id)
-    current_lang=l_select_language_by_case_id(case_id)
+    current_lang=l_select_language_short_by_case_id(case_id)
     current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
     current_userID=l_get_user_id_for_case_id(case_id)
-    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+    shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id)
+    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, current_userID)
     result= {}
     query= """select 
                 payload_text,
@@ -320,6 +284,60 @@ def l_get_fd_all(case_id, field_id):
     result['prompt']=l_get_prompt(current_lang,field_id)
     print(result)
     return result
+
+
+
+
+
+def l_get_fd(case_id, field_id):
+    print("l_get_fd, parameters:",case_id, field_id)
+    current_dsd=l_get_dsd_reference_for_case_id(case_id)
+    current_lang=l_select_language_short_by_case_id(case_id)
+    current_dsc=l_select_dsc_id_by_case_and_field(case_id,field_id)
+    current_userID=l_get_user_id_for_case_id(case_id)
+    shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id)
+    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+    result= {}
+    query= """select 
+                payload_text
+              from 
+                client_data_main
+              where
+                dsc_reference=?
+            """
+    cursor.execute(query,current_dsc)
+    payload= cursor.fetchone()
+    print("Payload", payload)
+
+    print('get_fd payload',payload)
+    if payload == None:
+        print("No record found")
+        result = l_get_fd_all(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
+                                                    # the shadow ensures that there is at least an empty record
+                                                    # now use the copy of the results either filled or new
+        l_add_cdm_entry(current_userID,
+                        case_id,
+                        current_dsc,
+                        pl_text=result['payload_text'],
+                        pl_number=result['payload_number'],
+                        pl_boolean=['payload_boolean'])
+
+        cursor2=conn.cursor()
+        cursor2.execute(query,current_dsc)
+        payload=cursor2.fetchone()
+        print('New payload:',payload)
+
+    print(payload)
+    result['payload']=payload[0]
+    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
+    print(l_get_label(current_lang, field_id))
+    result['label']=l_get_label(current_lang,field_id)
+    result['prompt']=l_get_prompt(current_lang,field_id)
+    #  print(result)
+    return result
+
+#print(l_get_fd(case_id=110,field_id=160))
+
 
 
 
