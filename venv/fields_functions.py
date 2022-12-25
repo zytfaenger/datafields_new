@@ -7,6 +7,37 @@ conn = get_connection()
 cursor = conn.cursor()
 
 
+def l_get_fields_table_columns():
+    query: str = """SELECT 
+                        field_id, 
+                        field_typ_id, 
+                        field_name, 
+                        field_description, 
+                        field_sequence, 
+                        field_group, 
+                        field_group_order, 
+                        field_sub_group, 
+                        field_sub_group_value, 
+                        admin_user, 
+                        admin_previous_entry, 
+                        admin_active, 
+                        admin_timestamp
+                    FROM 
+                        fields 
+                    WHERE 
+                        field_id=? 
+                    ORDER BY field_sequence"""
+
+    cursor.execute(query,"")
+    i=0
+    cset=[]
+    for c in cursor.description:
+        temp=(i,c[0])
+        cset.append(temp)
+        i= i+1
+    return cset
+#print(l_get_fields_table_columns())
+
 def l_get_active_fields():
     query: str = """SELECT 
                         field_id, 
@@ -25,16 +56,18 @@ def l_get_active_fields():
                     FROM 
                         fields 
                     WHERE 
-                        admin_active=1 
+                        admin_active=?
                     ORDER BY field_sequence"""
-
-    cursor.execute(query)
+    cursor.execute(query,1)
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
+
+# print(l_get_active_fields())
+
 
 def l_get_active_fields_for_dd(filter="%"):
     query: str = """SELECT 
@@ -54,7 +87,7 @@ def l_get_active_fields_for_dd(filter="%"):
         results.append(dict(zip(columns, row)))
     return results
 
-#print(l_get_active_fields_for_dd(filter="%La%"))
+# print(l_get_active_fields_for_dd(filter="%La%"))
 
 def l_get_all_fields():
     query: str = """SELECT 
@@ -81,7 +114,7 @@ def l_get_all_fields():
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
-
+# print(l_get_all_fields())
 
 def l_select_field_by_id(f_id):
     cursor.execute("""select 
@@ -103,14 +136,17 @@ def l_select_field_by_id(f_id):
                         where field_id=?""", f_id)
     columns = [column[0] for column in cursor.description]
     # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
+    results = cursor.fetchone()
+    if results is None:
+        return None
+    else:
+        res=[]
+        res.append(dict(zip(columns, results)))
         # print(results[0])
-    return results[0]
+        return res
 
 
-# print(l_select_field_by_id(110))
+#print(l_select_field_by_id(160))
 
 
 def l_get_field_sub_group_value_for_id(f_id):
@@ -258,7 +294,7 @@ def l_update_field(id_to_change,
 
 # Zuerst entsprechendes Feld erzeugen!
 # l_update_field(290, 100,"Test2","das ist ein Testfeld2",2)
-
+#l_update_field(160, 170, "Haupttitel 1", None, 1, "Case", 1, "aaaaa")
 
 def l_change_status_field_id(id_to_change, new_status):
     current_user = get_user()

@@ -1,5 +1,4 @@
 import anvil.server
-
 import PLZ
 import cases_functions
 import client_data_main
@@ -132,6 +131,10 @@ def get_all_fields():
     return fields_functions.l_get_all_fields()
 
 @anvil.server.callable
+def get_fields_table_columns():
+    return fields_functions.l_get_fields_table_columns()
+
+@anvil.server.callable
 def l_get_active_fields_for_dd(filter="%"):
     return fields_functions.l_get_active_fields_for_dd(filter)
 
@@ -181,7 +184,7 @@ def update_field(id_to_change,
                    fd_sub_group_value=None):
 
     fields_functions.l_update_field(
-            id_to_change,
+           id_to_change,
            fd_typ_id,
            fd_name,
            fd_description,
@@ -194,7 +197,7 @@ def update_field(id_to_change,
 
 
 # Zuerst entsprechendes Feld erzeugen!
-# l_update_field(290, 100,"Test2","das ist ein Testfeld2",2)
+
 
 @anvil.server.callable
 def change_status_field_id(id_to_change, new_status):
