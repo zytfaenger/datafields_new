@@ -32,11 +32,23 @@ def l_get_fields_table_columns():
     i=0
     cset=[]
     for c in cursor.description:
-        temp=(i,c[0])
+        print(c)
+        type=""
+        if c[1]==int:
+            type="number"
+        elif c[1]==float:
+            type="number"
+        elif c[1] == bool:
+            type="number"
+        elif c[1]==str:
+            type="text"
+        else:
+            type=c[1]
+        temp=(i,c[0],type)
         cset.append(temp)
         i= i+1
     return cset
-#print(l_get_fields_table_columns())
+print(l_get_fields_table_columns())
 
 def l_get_active_fields():
     query: str = """SELECT 
@@ -240,10 +252,10 @@ def l_update_field(id_to_change,
                    fd_name,
                    fd_description,
                    fd_sequence,
-                   fd_group="Case",
-                   fd_group_order=1,
-                   fd_sub_group=None,
-                   fd_sub_group_value=None):
+                   fd_group,
+                   fd_group_order,
+                   fd_sub_group,
+                   fd_sub_group_value):
     # print('l_updateft:',id_to_change,type,description,sequence)
     current_adminuser = get_user()
     current_timestamp = make_timestamp()
@@ -290,6 +302,7 @@ def l_update_field(id_to_change,
                            current_timestamp,
                            id_to_change))
     cursor3.commit()
+    print(id_to_change, "updated")
 
 
 # Zuerst entsprechendes Feld erzeugen!

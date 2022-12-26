@@ -173,15 +173,7 @@ def add_field(
 
 
 @anvil.server.callable
-def update_field(id_to_change,
-                   fd_typ_id,
-                   fd_name,
-                   fd_description,
-                   fd_sequence,
-                   fd_group="Case",
-                   fd_group_order=1,
-                   fd_sub_group=None,
-                   fd_sub_group_value=None):
+def update_field(id_to_change, fd_typ_id, fd_name,fd_description,fd_sequence,fd_group="Case",fd_group_order=1,fd_sub_group=None,fd_sub_group_value=None):
 
     fields_functions.l_update_field(
            id_to_change,
@@ -189,10 +181,10 @@ def update_field(id_to_change,
            fd_name,
            fd_description,
            fd_sequence,
-           fd_group="Case",
-           fd_group_order=1,
-           fd_sub_group=None,
-           fd_sub_group_value=None)
+           fd_group,
+           fd_group_order,
+           fd_sub_group,
+           fd_sub_group_value)
 
 
 
