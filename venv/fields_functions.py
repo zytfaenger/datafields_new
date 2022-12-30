@@ -124,7 +124,7 @@ def l_get_active_fields_for_dd(filter="%"):
         results.append(dict(zip(columns, row)))
     return results
 
-# print(l_get_active_fields_for_dd(filter="%La%"))
+print(l_get_active_fields_for_dd(filter="%La%"))
 
 def l_get_all_fields():
     query: str = """SELECT 

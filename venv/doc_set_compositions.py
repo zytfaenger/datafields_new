@@ -264,7 +264,7 @@ def l_ensure_completeness_of_shadow_dsc(dsd_id=120):
                 dsc_new = l_add_dsc_entry(current_dsd_id, f['field_id'], f['field_sequence'])
                 print(f, " added with Id: ", dsc_new)
 
-# print(l_ensure_completeness_of_shadow_dsc (120))
+print(l_ensure_completeness_of_shadow_dsc (120))
 
      #
 
