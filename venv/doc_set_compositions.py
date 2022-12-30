@@ -1,3 +1,7 @@
+import cases_functions
+import doc_set_definition
+import fields_functions
+import functions
 from functions import make_timestamp, get_user
 from log_functions import log_add_log_entry
 from connections import get_connection
@@ -29,14 +33,28 @@ def l_get_all_dsc():
 
 
 def l_select_dsc_by_dsd(dsd):
-    cursor.execute("select dsc_id, dsd_reference, field_id_reference, dsc_sequence, admin_user, admin_timestamp, admin_previous_entry, admin_active from dbo.doc_set_comp where dsd_reference=?",
-                   type)
+    cursor.execute("""select 
+                            dsc_id, dsd_reference, 
+                            field_id_reference, 
+                            dsc_sequence, 
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active 
+                        from 
+                            dbo.doc_set_comp 
+                        where 
+                            dsd_reference=?"""
+                        , dsd)
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
+
+#print("dsc 120:", l_select_dsc_by_dsd(120))
+
 
 def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
     query="""
@@ -126,14 +144,14 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
                         (cases.case_id=?) AND (field_id_reference = ?)""",
                         (case_id,field_id))
     result=cursor.fetchone()
-    print ("dsc_id ist:", result)
+    # print ("dsc_id ist:", result)
     if result is None:
         return None
     else:
         return result[0]
             #print(results[0]
 
-print(l_select_dsc_id_by_case_and_field(100,300))
+#print(l_select_dsc_id_by_case_and_field(100,300))
 
 
 
@@ -143,17 +161,26 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 
 
-def l_add_dsc_entry(reference,field_id,sequence):
+def l_add_dsc_entry(dsd_reference,field_id,sequence):
     user=get_user()
     timestamp=make_timestamp()
-    cursor.execute("insert into dbo.doc_set_comp (dsd_reference,dsd_reference,dsc_sequence, admin_user, admin_timestamp, admin_previous_entry, admin_active) "
-                   "values (?,?,?,?,?,?,?)",
-                   (reference, field_id, sequence, user, timestamp,0,1))
+    cursor.execute("""insert into 
+                            dbo.doc_set_comp (
+                                dsd_reference, 
+                                field_id_reference, 
+                                dsc_sequence, 
+                                admin_user, 
+                                admin_timestamp, 
+                                admin_previous_entry, 
+                                admin_active) """
+                   "values (?,?,?,?,?,?,?)""",
+                   (dsd_reference, field_id, sequence, user, timestamp,0,1))
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
     return last_id
 
+#l_add_dsc_entry(120,110,99)
 
 def l_update_dsc(id_to_change, reference, field_id,sequence):
     #print('l_updateft:',id_to_change,reference,field_id,sequence)
@@ -214,4 +241,30 @@ def l_change_status_dsc_by_id(id_to_change:int,new_status:int):
     cursor.execute("UPDATE doc_set_comp SET admin_user=?,admin_timestamp=?,admin_previous_entry=?,admin_active=? WHERE dsc_id=?",(current_user,current_timestamp,previous_log_entry,new_status,id_to_change))
     cursor.commit()
 
+def l_ensure_completeness_of_shadow_dsc(dsd_id=120):
+    current_user=functions.get_user_id()
+    current_dsd_id = dsd_id
+    counter=0
+    soll_dsc=fields_functions.l_get_active_fields_for_shadow_dsd()
+    current_content= l_select_dsc_by_dsd(dsd_id)
+    if current_content==[]:
+        for f in soll_dsc:
+
+            dsc_new= l_add_dsc_entry(current_dsd_id, f['field_id'], f['field_sequence'])
+            print(f," added with Id: ", dsc_new)
+    else:
+        current_dsc_ids=[]
+        for c in current_content:
+            current_dsc_ids.append(c['field_id_reference'])
+
+        for f in soll_dsc:
+            if f['field_id'] in current_dsc_ids:
+                pass
+            else:
+                dsc_new = l_add_dsc_entry(current_dsd_id, f['field_id'], f['field_sequence'])
+                print(f, " added with Id: ", dsc_new)
+
+# print(l_ensure_completeness_of_shadow_dsc (120))
+
+     #
 

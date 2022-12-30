@@ -101,14 +101,14 @@ def select_field_type_by_id(ft_id):
 
 
 @anvil.server.callable
-def add_field_type(ft_type, description, sequence):
-    return field_types.l_add_field_type(ft_type, description, sequence)
+def add_field_type(ft_type, description, sequence, shadow=True):
+    return field_types.l_add_field_type(ft_type, description, sequence, shadow)
 
 
 @anvil.server.callable
-def update_fd_type(id_to_change, ft_type, description, sequence):
+def update_fd_type(id_to_change, ft_type, description, sequence, shadow=True):
     # print("update fieldtype",id_to_change,type,description,sequence)
-    field_types.l_update_field_type(id_to_change, ft_type, description, sequence)
+    field_types.l_update_field_type(id_to_change, ft_type, description, sequence, shadow)
 
 
 @anvil.server.callable
@@ -247,6 +247,10 @@ def get_all_dsc():
 @anvil.server.callable
 def select_dsc_by_dsd(dsd):
     return doc_set_compositions.l_select_dsc_by_dsd(dsd)
+
+@anvil.server.callable
+def ensure_completeness_of_shadow_dsc(dsd_id=120):
+    doc_set_compositions.l_ensure_completeness_of_shadow_dsc(dsd_id)
 
 
 @anvil.server.callable

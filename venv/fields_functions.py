@@ -32,7 +32,7 @@ def l_get_fields_table_columns():
     i=0
     cset=[]
     for c in cursor.description:
-        print(c)
+        #print(c)
         type=""
         if c[1]==int:
             type="number"
@@ -48,7 +48,7 @@ def l_get_fields_table_columns():
         cset.append(temp)
         i= i+1
     return cset
-print(l_get_fields_table_columns())
+# print(l_get_fields_table_columns())
 
 def l_get_active_fields():
     query: str = """SELECT 
@@ -79,6 +79,31 @@ def l_get_active_fields():
     return results
 
 # print(l_get_active_fields())
+
+
+def l_get_active_fields_for_shadow_dsd():
+    active=True
+    shd_store=True
+    query: str = """SELECT 
+                        field_id, 
+                        field_sequence,
+                        field_typ_id,
+                        field_types.ft_shadow_store
+                    FROM 
+                        fields
+                        inner join field_types on fields.field_typ_id = field_types.ft_id
+                    WHERE 
+                        fields.admin_active=? and field_types.ft_shadow_store=?
+                    ORDER BY field_sequence"""
+    cursor.execute(query,(active,shd_store))
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+# print(l_get_active_fields_for_shadow_dsd())
 
 
 def l_get_active_fields_for_dd(filter="%"):
@@ -158,7 +183,7 @@ def l_select_field_by_id(f_id):
         return res
 
 
-#print(l_select_field_by_id(160))
+# print(l_select_field_by_id(160))
 
 
 def l_get_field_sub_group_value_for_id(f_id):
@@ -192,7 +217,7 @@ def l_get_field_sub_group_for_id(f_id):
     sub_group = ""
     for r in result:
         sub_group = r
-    print('l_get_field_sub_group_for_id', sub_group)
+    # print('l_get_field_sub_group_for_id', sub_group)
     return sub_group
 
 

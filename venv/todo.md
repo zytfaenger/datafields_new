@@ -1,0 +1,15 @@
+- Funktion, die für jeden neuen Kunden? (was ist ein Kunde) eine Schattendatei anlegt. 
+- Eine Schattendatei ist eine spezielle DSD (jetzt 120). Diese DSD ist zu unterscheiden von umfassenden Superset aller Felder.
+- Funktion, die an jede Schattendatei ein neues Feld anfügt, welches Daten speichert.
+- Funktion, die sicherstellt, dass alle Schattendateien synchron sind
+- Feld, das angibt, ob ein neues Feld an eine Schattendatei angeführt werden muss.
+- Rechte-Struktur
+- Feld-Typen und ihre Eingabe
+  - Owner darf Eingaben machen.
+    - z.B. Manuelle Eingabe
+    - PDF von Datei laden
+  - Owner darf Eingaben anderer holen
+    - z.B. PDF von einer Krankenkasse
+    - Eine Krankenkasse darf meine Adresse verlinken
+      - evtl. mit Änderungsanotation (via Log)
+    - Eine Anwendung zieht eine Kopie
