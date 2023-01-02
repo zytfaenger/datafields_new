@@ -290,14 +290,14 @@ def change_status_dsc_by_id(id_to_change: int, new_status: int):
 
 
 # ----Client_Data_Main: Document Set Composition --------------
-@anvil.server.callable
-def update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
-    client_data_main.l_update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
+# @anvil.server.callable  not used
+# def update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean):
+#     client_data_main.l_update_cdm_entry(user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
 def set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean):
-    client_data_main.l_update_cdm_entry(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
+    client_data_main.l_set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable

@@ -106,7 +106,7 @@ def l_get_cdm_entry_ID(user_id, case_id, dsc_id_ref):
     result = cursor.fetchone()
     if result == None:
         print("l_get_cdm_entry_ID no record (cdm 105)")
-        entry = l_add_cdm_entry(user_id,dsc_id_ref,pl_text="Empty")
+        entry = l_add_cdm_entry(user_id, case_id, dsc_id_ref, pl_text="None",pl_number=99999,pl_boolean=0)
         print ("cdm_entry line 108",entry)
         return entry
     for row in result:
@@ -167,41 +167,6 @@ def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_bool
     return last_id
 
 
-def l_update_cdm_entry(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
-    print("Update läuft mit folgenden Paras:", user_id,case_id,field_id,pl_text,pl_number,pl_boolean)
-    dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    print("cdm 169: dsc_id", dsc_id)
-    id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
-    current_admin_user=get_user()
-    current_timestamp = make_timestamp()
-    current_table_name = 'client_data_main'
-    current_table_id=id_to_change
-    current_payload=str(l_select_cdm_by_id(id_to_change))
-    print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
-    previous_log_entry=add_log_entry(current_admin_user,
-                                     current_timestamp,
-                                     current_table_name,
-                                     current_table_id,
-                                     current_payload)
-    #print(previous_log_entry)
-    cursor3=conn.cursor()
-    cursor3.execute("""UPDATE 
-                            client_data_main 
-                       SET 
-                            user_id_reference=?,
-                            case_id_reference=?,
-                            dsc_reference=?,
-                            payload_text=?,
-                            payload_number=?,
-                            payload_boolean=?,
-                            admin_user=?,
-                            admin_timestamp=?,
-                            admin_previous_entry=?,
-                            admin_active=?
-                        WHERE 
-                            cdm_id=?""",
-                    (user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean, current_admin_user, current_timestamp, previous_log_entry, 1, id_to_change))
-    cursor3.commit()
 
 
 def l_change_status_dsd_by_id(id_to_change:int,new_status:int):
@@ -340,9 +305,129 @@ def l_get_fd(case_id, field_id):
     #  print(result)
     return result
 
-print(l_get_fd(case_id=110,field_id=170))
+# print(l_get_fd(case_id=110,field_id=170))
 
 # print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
+
+def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
+    if pl_text=='=':
+        update_text=False
+    else:
+        update_text=True
+
+    if pl_number == '=':
+        update_number = False
+    else:
+        update_number = True
+
+    if pl_boolean == '=':
+        update_boolean = False
+    else:
+        update_boolean = True
+
+    if update_text==False and update_number==False and update_boolean==False:
+        print ("set FD: nothing to update")
+    else:  #we need to define the values to be updated
+        existing_payload = l_get_fd(case_id,field_id)
+        if update_text==True:
+            pl_new_text=pl_text
+        else:
+           pl_new_text=existing_payload['payload_text']
+
+        if update_number==True:
+            pl_new_number=pl_number
+        else:
+            pl_new_number=existing_payload['payload_number']
+
+        if update_boolean == True:
+            pl_new_boolean = pl_boolean
+        else:
+            pl_new_boolean = existing_payload['payload_boolean']
+    # ok, we have them
+        print("Update läuft mit folgenden Paras:", user_id,case_id,field_id,pl_new_text,pl_new_number,pl_new_boolean)
+        shadow_case_id=cases_functions.l_get_shadow_case_id_for_case_id(case_id)
+        dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+        shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
+
+        #update normal  Record should exist -:)
+        print("set_fd: dsc_id", dsc_id)
+        id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
+        current_admin_user=get_user()
+        current_timestamp = make_timestamp()
+        current_table_name = 'client_data_main'
+        current_table_id=id_to_change
+        current_payload=str(l_select_cdm_by_id(id_to_change))
+        print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
+        previous_log_entry=add_log_entry(current_admin_user,
+                                         current_timestamp,
+                                         current_table_name,
+                                         current_table_id,
+                                         current_payload)
+        # print(previous_log_entry)
+        cursor3 = conn.cursor()
+        cursor3.execute("""UPDATE 
+                                client_data_main 
+                           SET 
+                                user_id_reference=?,
+                                case_id_reference=?,
+                                dsc_reference=?,
+                                payload_text=?,
+                                payload_number=?,
+                                payload_boolean=?,
+                                admin_user=?,
+                                admin_timestamp=?,
+                                admin_previous_entry=?,
+                                admin_active=?
+                            WHERE 
+                                cdm_id=?""",
+                        (
+                        user_id, case_id, dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
+                        previous_log_entry, 1, id_to_change))
+        cursor3.commit()
+
+        # shadow Record does not necessarily exist!
+        print("set fd: shadow_dsc_id", shadow_dsc_id)
+        id_to_change=l_get_cdm_entry_ID(user_id, shadow_case_id, shadow_dsc_id)
+        current_admin_user=get_user()
+        current_timestamp = make_timestamp()
+        current_table_name = 'shadow_client_data_main'
+        current_table_id=id_to_change
+        if id_to_change is None:
+            current_payload="No Record existed yet --> is added as copy"
+        else:
+            current_payload=str(l_select_cdm_by_id(id_to_change))
+        print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
+        previous_log_entry=add_log_entry(current_admin_user,
+                                         current_timestamp,
+                                         current_table_name,
+                                         current_table_id,
+                                         current_payload)
+
+        if id_to_change is None:
+            l_add_cdm_entry(user_id,shadow_case_id,shadow_dsc_id,pl_new_text,pl_new_number,pl_new_boolean)
+        else:
+            cursor4 = conn.cursor()
+            cursor4.execute("""UPDATE 
+                                    client_data_main 
+                               SET 
+                                    user_id_reference=?,
+                                    case_id_reference=?,
+                                    dsc_reference=?,
+                                    payload_text=?,
+                                    payload_number=?,
+                                    payload_boolean=?,
+                                    admin_user=?,
+                                    admin_timestamp=?,
+                                    admin_previous_entry=?,
+                                    admin_active=?
+                                WHERE 
+                                    cdm_id=?""",
+                            (
+                            user_id, shadow_case_id, shadow_dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
+                            previous_log_entry, 1, id_to_change))
+            cursor4.commit()
+
+l_set_fd(100, 100, 170,'Carouge',1200,'=')
 
 
 
