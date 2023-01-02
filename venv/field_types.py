@@ -76,7 +76,7 @@ def l_select_field_type_by_id(id):
                             ft_type, 
                             ft_description, 
                             ft_sequence, 
-                            ft_shadow_store
+                            ft_shadow_store,
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -94,6 +94,7 @@ def l_select_field_type_by_id(id):
         #print(results[0])
     return results[0]
 
+print(l_select_field_type_by_id(170)['ft_shadow_store'])
 
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)

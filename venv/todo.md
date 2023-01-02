@@ -1,15 +1,25 @@
 - Funktion, die für jeden neuen Kunden? (was ist ein Kunde) eine Schattendatei anlegt. 
-- Eine Schattendatei ist eine spezielle DSD (jetzt 120). Diese DSD ist zu unterscheiden von umfassenden Superset aller Felder.
+- Eine Schattendatei ist eine spezielle DSD (jetzt 120). Diese DSD ist zu unterscheiden von umfassenden Superset aller Felder (typischerweise 100.
 - Funktion, die an jede Schattendatei ein neues Feld anfügt, welches Daten speichert.
 - Funktion, die sicherstellt, dass alle Schattendateien synchron sind
-- Feld, das angibt, ob ein neues Feld an eine Schattendatei angeführt werden muss.
+  - Select aller Felder eines clienten, nimm die zeitlich letzte Datei
+  - Zeige Auswahl pro Feld, wenn mehrere
+  - speichere Auswahl mit neuem Zeitstempel und stelle sicher, dass die anderen Felder nicht mehr erscheinen?   
+done  Feld, das angibt, ob ein neues Feld an eine Schattendatei angeführt werden muss.
 - Rechte-Struktur
+  - auf Stufe Case, legt fest wer Owner, Subscribercode und oder Kopierer ist
+    - der Owner bestimmt den writer auf seine Felder, meistens sich selbst? 
+      - Owner darf Eingaben machen.
+        - z.B. Manuelle Eingabe
+        - PDF von Datei laden 
+    - Owner darf Eingaben subscriben
+      - z.B. PDF von einer Krankenkasse
+      - Achtung: Eine Krankenkasse darf mit meiner Einwilligung meine Adresse zu sich verlinken
+        - evtl. mit Änderungsanotation (via Log)ein Subscriber bezieht ein Teil seiner Felder als subscriber von einem anderen Nutzer (mit dessen Einwilligung)
+        - sie wird als Liste angelegt
+        - das Recht kann entzogen werden
+        - es signalisiert, wenn es geändert hat
+  - Kopien sind fixierte CDM-Referenzen, die im Rahmen eines Formulars ein anderer Benutzer einmal für sich selbst kopieren an
 - Feld-Typen und ihre Eingabe
-  - Owner darf Eingaben machen.
-    - z.B. Manuelle Eingabe
-    - PDF von Datei laden
-  - Owner darf Eingaben anderer holen
-    - z.B. PDF von einer Krankenkasse
-    - Eine Krankenkasse darf meine Adresse verlinken
-      - evtl. mit Änderungsanotation (via Log)
-    - Eine Anwendung zieht eine Kopie
+- Funktion welche beim Schreiben die Schattendatei ändert (da Log wird nicht gefragt)
+- Funkton, alle Werte in der Schattendatei aus dem Log zu holen

@@ -58,7 +58,15 @@ def l_select_dsd_by_case(case_id):
     #print(results[0])
     return results[0]['dsd_reference']
 
+def l_is_shadow_case(case_id):
+    current_dsd_id=l_select_dsd_by_case(case_id)
+    current_dsd_record=l_select_dsd_by_id(current_dsd_id)
+    if current_dsd_record['dsd_name']=="Shadowset":
+        return True
+    else:
+        return False
 
+#print(l_is_shadow_case(110))
 
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)

@@ -124,7 +124,7 @@ def l_get_active_fields_for_dd(filter="%"):
         results.append(dict(zip(columns, row)))
     return results
 
-print(l_get_active_fields_for_dd(filter="%La%"))
+# print(l_get_active_fields_for_dd(filter="%La%"))
 
 def l_get_all_fields():
     query: str = """SELECT 
@@ -180,10 +180,10 @@ def l_select_field_by_id(f_id):
         res=[]
         res.append(dict(zip(columns, results)))
         # print(results[0])
-        return res
+        return res[0]
 
 
-# print(l_select_field_by_id(160))
+#print(l_select_field_by_id(160)['field_typ_id'])
 
 
 def l_get_field_sub_group_value_for_id(f_id):
@@ -327,7 +327,7 @@ def l_update_field(id_to_change,
                            current_timestamp,
                            id_to_change))
     cursor3.commit()
-    print(id_to_change, "updated")
+    # (id_to_change, "updated")
 
 
 # Zuerst entsprechendes Feld erzeugen!

@@ -1,5 +1,5 @@
-import cases_functions
 import doc_set_definition
+import field_types
 import fields_functions
 import functions
 from functions import make_timestamp, get_user
@@ -55,39 +55,75 @@ def l_select_dsc_by_dsd(dsd):
 
 #print("dsc 120:", l_select_dsc_by_dsd(120))
 
+#  ---> probably rubbish not used!!
+# def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
+#     query="""
+#     SELECT
+#         doc_set_comp.dsc_sequence,
+#         doc_set_comp.dsc_id,
+#         doc_set_def.dsd_name,
+#         fields.field_id,
+#         fields.field_name,
+#         dbo.languages.lang_short,
+#         dbo.field_types.ft_stores_state,
+#         dbo.field_types.ft_stores_data
+#     FROM
+#         dbo.doc_set_comp
+#             INNER JOIN dbo.doc_set_def ON dbo.doc_set_comp.dsd_reference = dbo.doc_set_def.dsd_id
+#             INNER JOIN dbo.fields ON dbo.doc_set_comp.field_id_reference = dbo.fields.field_id
+#             INNER JOIN dbo.field_types ON dbo.fields.field_typ_id = dbo.field_types.ft_id
+#             INNER JOIN dbo.field_descriptions ON dbo.fields.field_id = dbo.field_descriptions.field_id_reference
+#             INNER JOIN dbo.languages ON dbo.field_descriptions.language_id_reference = dbo.languages.lang_id
+#     WHERE
+#     (dsd_id = ?) AND (languages.lang_short = ?) AND (field_types.ft_shadow_store=?)
+#     ORDER BY
+#     dbo.doc_set_comp.dsc_sequence """
+#     cursor.execute(query,(case_dsd,case_language,True))
+#     columns = [column[0] for column in cursor.description]
+#     # print(columns)
+#     qres=cursor.fetchall()
+#     results = []
+#     for row in qres:
+#         results.append(dict(zip(columns, row)))
+#     #print(results)
+#     return results
+#
+# # print(l_select_dsc_to_store_for_dsd(120, 'D-CH'))
 
-def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
+def l_select_dsc_to_store_for_case_id(case_id):
+    dsf_for_case=doc_set_definition.l_select_dsd_by_case(case_id)
     query="""
-    SELECT
-        doc_set_comp.dsc_sequence,
-        doc_set_comp.dsc_id,
-        doc_set_def.dsd_name,
-        fields.field_id,
-        fields.field_name,
-        dbo.languages.lang_short,
-        dbo.field_types.ft_stores_state,
-        dbo.field_types.ft_stores_data
-    FROM
-        dbo.doc_set_comp
-            INNER JOIN dbo.doc_set_def ON dbo.doc_set_comp.dsd_reference = dbo.doc_set_def.dsd_id
-            INNER JOIN dbo.fields ON dbo.doc_set_comp.field_id_reference = dbo.fields.field_id
-            INNER JOIN dbo.field_types ON dbo.fields.field_typ_id = dbo.field_types.ft_id
-            INNER JOIN dbo.field_descriptions ON dbo.fields.field_id = dbo.field_descriptions.field_id_reference
-            INNER JOIN dbo.languages ON dbo.field_descriptions.language_id_reference = dbo.languages.lang_id
-    WHERE
-    (dsd_id = ?) AND (languages.lang_short = ?) AND ((field_types.ft_stores_data=1) OR (field_types.ft_stores_state=1))
-    ORDER BY
-    dbo.doc_set_comp.dsc_sequence """
-    cursor.execute(query,(case_dsd,case_language))
+        select 
+            dsc_id, 
+            dsd_reference, 
+            field_id_reference, 
+            dsc_sequence, 
+            admin_user, 
+            admin_timestamp, 
+            admin_previous_entry, 
+            admin_active 
+        from 
+            doc_set_comp
+        where
+            dsd_reference=?
+        order by 
+            dsc_sequence
+        """
+    cursor.execute(query,dsf_for_case)
     columns = [column[0] for column in cursor.description]
     # print(columns)
+    qres=cursor.fetchall()
     results = []
-    for row in cursor.fetchall():
+    for row in qres:
         results.append(dict(zip(columns, row)))
     #print(results)
     return results
 
-#unregistered yet
+#print(l_select_dsc_to_store_for_case_id(180))
+
+
+
+
 
 def l_select_required_form_data(case_dsd,dsc_id, case_language,):   #<--- not working
     query="""
@@ -135,7 +171,7 @@ def l_select_dsc_by_id(id):
 
 def l_select_dsc_id_by_case_and_field(case_id,field_id):
     cursor.execute("""select 
-                        dsc_id
+                        doc_set_comp.dsc_id
                        from 
                         dbo.doc_set_comp
                             inner join doc_set_def on  doc_set_comp.dsd_reference = doc_set_def.dsd_id
@@ -146,12 +182,29 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
     result=cursor.fetchone()
     # print ("dsc_id ist:", result)
     if result is None:
-        return None
+        current_field_fype_id = fields_functions.l_select_field_by_id(field_id)['field_typ_id'] #get me the field type please
+        in_shadow_case = doc_set_definition.l_is_shadow_case(case_id)
+        if in_shadow_case==False:
+           msg=("select_dsc_id_by_case_and_field: no record in current case for case {}, field: {} -->strange").format(case_id,field_id)
+           print(msg)
+           return None
+        else:
+            field_is_Shadow =  field_types.l_select_field_type_by_id(current_field_fype_id)['ft_shadow_store']   #is it shadow?
+            if field_is_Shadow is False:
+                msg = ("from select_dsc_id_by_case_and_field --> field_id: {} has field_type: {} where shadow is {}").format(field_id,current_field_fype_id,field_is_Shadow)
+                print(msg)
+            else:
+                msg = ("from select_dsc_id_by_case_and_field --> for field_id = {} shadow = true, but record not in store yet  --> if shadow-case,check completeness of shadow!").format(field_id)
+                print(msg)
+            return None
     else:
         return result[0]
             #print(results[0]
 
-#print(l_select_dsc_id_by_case_and_field(100,300))
+# print(l_select_dsc_id_by_case_and_field(110,160)) # textfeld in formular o.k.
+# print(l_select_dsc_id_by_case_and_field(120,160)) # textfeld in formular in shadow nicht enthalten
+# print(l_select_dsc_id_by_case_and_field(110,999)) # textfeld in formular nicht enhalten -> sollte nicht sein
+
 
 
 
@@ -264,7 +317,7 @@ def l_ensure_completeness_of_shadow_dsc(dsd_id=120):
                 dsc_new = l_add_dsc_entry(current_dsd_id, f['field_id'], f['field_sequence'])
                 print(f, " added with Id: ", dsc_new)
 
-print(l_ensure_completeness_of_shadow_dsc (120))
+#print(l_ensure_completeness_of_shadow_dsc (120))
 
-     #
+
 
