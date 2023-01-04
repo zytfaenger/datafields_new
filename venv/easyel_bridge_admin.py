@@ -15,8 +15,8 @@ from connections import get_connection
 conn = get_connection()
 
 
-# anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules
-anvil.server.connect('server_UTEZBTAL4U6QJVKILS4ISDYP-F6JMSXNZ36WYEYKQ')  #admin
+anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules
+# anvil.server.connect('server_UTEZBTAL4U6QJVKILS4ISDYP-F6JMSXNZ36WYEYKQ')  #admin
 
 # -------- Logging----------#
 

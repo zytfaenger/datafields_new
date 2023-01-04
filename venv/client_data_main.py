@@ -427,7 +427,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                             previous_log_entry, 1, id_to_change))
             cursor4.commit()
 
-l_set_fd(100, 100, 170,'Carouge',1200,'=')
+#l_set_fd(100, 100, 170,'Carouge',1200,'=')
 
 
 
