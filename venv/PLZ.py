@@ -49,7 +49,7 @@ def l_select_plz_info_by_id(plz_id):
     for row in cursor.fetchall():
         entry=row[0],row[1],row[2]
         results.append(entry)
-    return results
+    return results[0]
 
 #res=(l_select_plz_info_by_ID(2635))[0]
 #print(res)

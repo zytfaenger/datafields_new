@@ -334,6 +334,11 @@ def get_field_sub_group_value_for_id(f_id):
 def ensure_doc(case_id, field_id):
     return docs_functions.l_ensure_doc(case_id, field_id)
 
+# ---- cases functions.py --------------
+
+@anvil.server.callable()
+def get_shadow_case_id_for_case_id(ca_id):
+    return cases_functions.l_get_shadow_case_id_for_case_id(ca_id)
 
 
 # print(get_languages())

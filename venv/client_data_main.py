@@ -146,25 +146,25 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
 
 
 def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_boolean=None):
-    admin_user=get_user()
-    timestamp=make_timestamp()
-    cursor.execute("""insert into dbo.client_data_main 
-                    (user_id_reference, 
-                     case_id_reference,
-                     dsc_reference,
-                     payload_text,
-                     payload_number,
-                     payload_boolean, 
-                     admin_user, 
-                     admin_timestamp, 
-                     admin_previous_entry,
-                     admin_active) """
-                   "values (?,?,?,?,?,?,?,?,?,?)",
-                   (user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean,admin_user, timestamp,0,1))
-    cursor.commit()
-    cursor.execute("SELECT @@IDENTITY AS ID;")
-    last_id = int(cursor.fetchone()[0])
-    return last_id
+        admin_user=get_user()
+        timestamp=make_timestamp()
+        cursor.execute("""insert into dbo.client_data_main 
+                        (user_id_reference, 
+                         case_id_reference,
+                         dsc_reference,
+                         payload_text,
+                         payload_number,
+                         payload_boolean, 
+                         admin_user, 
+                         admin_timestamp, 
+                         admin_previous_entry,
+                         admin_active) """
+                       "values (?,?,?,?,?,?,?,?,?,?)",
+                       (user_id, case_id, dsc_id, pl_text, pl_number, pl_boolean,admin_user, timestamp,0,1))
+        cursor.commit()
+        cursor.execute("SELECT @@IDENTITY AS ID;")
+        last_id = int(cursor.fetchone()[0])
+        return last_id
 
 
 
@@ -224,9 +224,9 @@ def l_get_fd_shadow(case_id, field_id):
               from 
                 client_data_main
               where
-                dsc_reference=?
+                dsc_reference=? and case_id_reference=?
             """
-    cursor.execute(query,current_dsc)
+    cursor.execute(query,(current_dsc,case_id))
     payload= cursor.fetchone()
     print('get_fd_all payload',payload)
 
@@ -235,7 +235,7 @@ def l_get_fd_shadow(case_id, field_id):
         l_add_cdm_entry(current_userID, case_id, current_dsc, 'None',99999,False)
         print('get_fd_shadow: missing cdm shadow record added!')
         cursor2=conn.cursor()
-        cursor2.execute(query,current_dsc)
+        cursor2.execute(query,(current_dsc,case_id))
         payload=cursor2.fetchone()
         print('New payload:',payload)
 
@@ -259,51 +259,61 @@ def l_get_fd(case_id, field_id):
     current_dsd=l_get_dsd_reference_for_case_id(case_id)
     current_lang=l_select_language_short_by_case_id(case_id)
     current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    current_userID=l_get_user_id_for_case_id(case_id)
-    shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
-    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
-    result= {}
-    query= """select 
-                payload_text,
-                payload_number,
-                payload_boolean
-              from 
-                client_data_main
-              where
-                dsc_reference=?
-            """
-    cursor.execute(query,current_dsc)
-    payload= cursor.fetchone()
-    # print("Payload", payload)
+    if current_dsc==None:  ##DSC nicht eröffnet, abort
+        text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
+    else:
+        current_userID=l_get_user_id_for_case_id(case_id)
+        shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
+        if shadow_case_id==0: #make sure it is really a shadow case direct
+            if cases_functions.l_get_shadow_case_indicator_for_case_id(case_id) is True:
+                shadow_case_id=case_id
+                print('get_fd:',case_id," is Shadow Case!")
+            else:
+                print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+        result= {}
+        query= """select 
+                    payload_text,
+                    payload_number,
+                    payload_boolean
+                  from 
+                    client_data_main
+                  where
+                    dsc_reference=? and case_id_reference=?
+                """
+        cursor.execute(query,(current_dsc,case_id))
+        payload= cursor.fetchone()
+        # print("Payload", payload)
 
-    print('get_fd payload',payload)
-    if payload is None:
-        print("No record found in current data")
-        result = l_get_fd_shadow(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
-                                                    # the shadow ensures that there is at least an empty record
-                                                    # now use the copy of the results either filled or new
-        l_add_cdm_entry(current_userID,
-                        case_id,
-                        current_dsc,
-                        pl_text=result['payload_text'],
-                        pl_number=result['payload_number'],
-                        pl_boolean=result['payload_boolean'])
+        print('get_fd payload',payload)
+        if payload is None:
+            print("No record found in current data")
+            result = l_get_fd_shadow(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
+                                                        # the shadow ensures that there is at least an empty record
+                                                        # now use the copy of the results either filled or new
 
-        cursor2=conn.cursor()
-        cursor2.execute(query,current_dsc)
-        payload=cursor2.fetchone()
-        print('New payload:',payload)
+            new_record = l_add_cdm_entry(current_userID,
+                            case_id,
+                            current_dsc,
+                            pl_text=result['payload_text'],
+                            pl_number=result['payload_number'],
+                            pl_boolean=result['payload_boolean'])
 
-    print(payload)
-    result['payload_text']=payload[0]
-    result['payload_number'] = payload[1]
-    result['payload_boolean'] = payload[2]
-    print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-    print(l_get_label(current_lang, field_id))
-    result['label']=l_get_label(current_lang,field_id)
-    result['prompt']=l_get_prompt(current_lang,field_id)
-    #  print(result)
-    return result
+            cursor2=conn.cursor()
+            cursor2.execute(query,(current_dsc,case_id))
+            payload=cursor2.fetchone()
+            print('New payload:',payload)
+
+        print(payload)
+        result['payload_text']=payload[0]
+        result['payload_number'] = payload[1]
+        result['payload_boolean'] = payload[2]
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
+        print(l_get_label(current_lang, field_id))
+        result['label']=l_get_label(current_lang,field_id)
+        result['prompt']=l_get_prompt(current_lang,field_id)
+        #  print(result)
+        return result
 
 # print(l_get_fd(case_id=110,field_id=170))
 
@@ -346,86 +356,94 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
     # ok, we have them
         print("Update läuft mit folgenden Paras:", user_id,case_id,field_id,pl_new_text,pl_new_number,pl_new_boolean)
         shadow_case_id=cases_functions.l_get_shadow_case_id_for_case_id(case_id)
-        dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-        shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
 
-        #update normal  Record should exist -:)
-        print("set_fd: dsc_id", dsc_id)
-        id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
-        current_admin_user=get_user()
-        current_timestamp = make_timestamp()
-        current_table_name = 'client_data_main'
-        current_table_id=id_to_change
-        current_payload=str(l_select_cdm_by_id(id_to_change))
-        print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
-        previous_log_entry=add_log_entry(current_admin_user,
-                                         current_timestamp,
-                                         current_table_name,
-                                         current_table_id,
-                                         current_payload)
-        # print(previous_log_entry)
-        cursor3 = conn.cursor()
-        cursor3.execute("""UPDATE 
-                                client_data_main 
-                           SET 
-                                user_id_reference=?,
-                                case_id_reference=?,
-                                dsc_reference=?,
-                                payload_text=?,
-                                payload_number=?,
-                                payload_boolean=?,
-                                admin_user=?,
-                                admin_timestamp=?,
-                                admin_previous_entry=?,
-                                admin_active=?
-                            WHERE 
-                                cdm_id=?""",
-                        (
-                        user_id, case_id, dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
-                        previous_log_entry, 1, id_to_change))
-        cursor3.commit()
+        if shadow_case_id==0: #hey we may have a shadow-case in direct mode, let's make sure
+            is_shadow = cases_functions.l_get_shadow_case_indicator_for_case_id(case_id)
+            if is_shadow is False:
+                msg = ("Set_fd: Bei case id {} ist die Shadow_id nicht gesetzt!").format(case_id)
+                return msg
+            else:
+                shadow_case_id = case_id  # stellt case auf sich selbst ein
+                dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+                shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
 
-        # shadow Record does not necessarily exist!
-        print("set fd: shadow_dsc_id", shadow_dsc_id)
-        id_to_change=l_get_cdm_entry_ID(user_id, shadow_case_id, shadow_dsc_id)
-        current_admin_user=get_user()
-        current_timestamp = make_timestamp()
-        current_table_name = 'shadow_client_data_main'
-        current_table_id=id_to_change
-        if id_to_change is None:
-            current_payload="No Record existed yet --> is added as copy"
-        else:
-            current_payload=str(l_select_cdm_by_id(id_to_change))
-        print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
-        previous_log_entry=add_log_entry(current_admin_user,
-                                         current_timestamp,
-                                         current_table_name,
-                                         current_table_id,
-                                         current_payload)
+                #update normal  Record should exist -:)
+                print("set_fd: dsc_id", dsc_id)
+                id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
+                current_admin_user=get_user()
+                current_timestamp = make_timestamp()
+                current_table_name = 'client_data_main'
+                current_table_id=id_to_change
+                current_payload=str(l_select_cdm_by_id(id_to_change))
+                print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
+                previous_log_entry=add_log_entry(current_admin_user,
+                                                 current_timestamp,
+                                                 current_table_name,
+                                                 current_table_id,
+                                                 current_payload)
+                # print(previous_log_entry)
+                cursor3 = conn.cursor()
+                cursor3.execute("""UPDATE 
+                                        client_data_main 
+                                   SET 
+                                        user_id_reference=?,
+                                        case_id_reference=?,
+                                        dsc_reference=?,
+                                        payload_text=?,
+                                        payload_number=?,
+                                        payload_boolean=?,
+                                        admin_user=?,
+                                        admin_timestamp=?,
+                                        admin_previous_entry=?,
+                                        admin_active=?
+                                    WHERE 
+                                        cdm_id=?""",
+                                (
+                                user_id, case_id, dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
+                                previous_log_entry, 1, id_to_change))
+                cursor3.commit()
 
-        if id_to_change is None:
-            l_add_cdm_entry(user_id,shadow_case_id,shadow_dsc_id,pl_new_text,pl_new_number,pl_new_boolean)
-        else:
-            cursor4 = conn.cursor()
-            cursor4.execute("""UPDATE 
-                                    client_data_main 
-                               SET 
-                                    user_id_reference=?,
-                                    case_id_reference=?,
-                                    dsc_reference=?,
-                                    payload_text=?,
-                                    payload_number=?,
-                                    payload_boolean=?,
-                                    admin_user=?,
-                                    admin_timestamp=?,
-                                    admin_previous_entry=?,
-                                    admin_active=?
-                                WHERE 
-                                    cdm_id=?""",
-                            (
-                            user_id, shadow_case_id, shadow_dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
-                            previous_log_entry, 1, id_to_change))
-            cursor4.commit()
+                # shadow Record does not necessarily exist!
+                print("set fd: shadow_dsc_id", shadow_dsc_id)
+                id_to_change=l_get_cdm_entry_ID(user_id, shadow_case_id, shadow_dsc_id)
+                current_admin_user=get_user()
+                current_timestamp = make_timestamp()
+                current_table_name = 'shadow_client_data_main'
+                current_table_id=id_to_change
+                if id_to_change is None:
+                    current_payload="No Record existed yet --> is added as copy"
+                else:
+                    current_payload=str(l_select_cdm_by_id(id_to_change))
+                print("------>",current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
+                previous_log_entry=add_log_entry(current_admin_user,
+                                                 current_timestamp,
+                                                 current_table_name,
+                                                 current_table_id,
+                                                 current_payload)
+
+                if id_to_change is None:
+                    l_add_cdm_entry(user_id,shadow_case_id,shadow_dsc_id,pl_new_text,pl_new_number,pl_new_boolean)
+                else:
+                    cursor4 = conn.cursor()
+                    cursor4.execute("""UPDATE 
+                                            client_data_main 
+                                       SET 
+                                            user_id_reference=?,
+                                            case_id_reference=?,
+                                            dsc_reference=?,
+                                            payload_text=?,
+                                            payload_number=?,
+                                            payload_boolean=?,
+                                            admin_user=?,
+                                            admin_timestamp=?,
+                                            admin_previous_entry=?,
+                                            admin_active=?
+                                        WHERE 
+                                            cdm_id=?""",
+                                    (
+                                    user_id, shadow_case_id, shadow_dsc_id, pl_new_text, pl_new_number, pl_new_boolean, current_admin_user, current_timestamp,
+                                    previous_log_entry, 1, id_to_change))
+                    cursor4.commit()
 
 #l_set_fd(100, 100, 170,'Carouge',1200,'=')
 
