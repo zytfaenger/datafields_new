@@ -1,6 +1,7 @@
+import addresses_users
 import connections
 import functions
-from functions import make_timestamp, get_user
+from functions import make_timestamp
 from log_functions import log_add_log_entry
 
 conn = connections.get_connection()
@@ -191,7 +192,8 @@ def create_admin_user():
 def l_add_user  (u_anvil_usr,
                 usr_last_name,
                 usr_first_name,
-                 anvil_user_two_int=True):
+                e_mail,
+                anvil_user_two_int=True):
     anvil_user_l = l_get_anvil_user_components_as_list(u_anvil_usr)
     usr1=anvil_user_l[0]
     usr2=anvil_user_l[1]
@@ -222,10 +224,11 @@ def l_add_user  (u_anvil_usr,
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
+    addresses_users.add_address(usr_last_name,usr_first_name,e_mail,last_id)
     return tmp_user
 
 
-#print(l_add_user("[344817,524933171]","Schumacher","Martin"))
+#print(l_add_user("[344817,524933171]","Schumacher","Martin","ms@gmail.com"))
 
 
 def l_get_new_temp_user_id(anvil_usr_to_change):
