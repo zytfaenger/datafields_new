@@ -78,7 +78,7 @@ def l_get_active_fields():
         results.append(dict(zip(columns, row)))
     return results
 
-# print(l_get_active_fields())
+print(l_get_active_fields())
 
 
 def l_get_active_fields_for_shadow_dsd():

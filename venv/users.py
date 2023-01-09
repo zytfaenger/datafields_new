@@ -1,4 +1,5 @@
 import addresses_users
+import uuid
 import connections
 import functions
 from functions import make_timestamp
@@ -98,12 +99,13 @@ def l_get_all_users():
 
 # print(l_get_all_users())
 
-def l_select_user_by_id(usr_id):
+def l_get_user_by_id(usr_id):
     cursor.execute("""SELECT 
                         user_id,
                         user_anvil_user,
                         anvil_user_1_int,
-                        anvil_user_2_int,                    
+                        anvil_user_2_int,
+                        temp_user,                    
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -131,7 +133,8 @@ def l_get_userid_for_anvil_user(anvil_usr_id:str):
                         user_id,
                         user_anvil_user,
                         anvil_user_1_int,
-                        anvil_user_2_int,                    
+                        anvil_user_2_int, 
+                        temp_user,                   
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -154,6 +157,36 @@ def l_get_userid_for_anvil_user(anvil_usr_id:str):
 #print(l_get_userid_for_anvil_user('[344816,524933170]'))
 
 
+def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
+    tmp_usr_uuid=uuid.UUID(temp_usr_uuid)
+    cursor.execute("""SELECT 
+                        user_id,
+                        user_anvil_user,
+                        anvil_user_1_int,
+                        anvil_user_2_int,
+                        temp_user,                    
+                        admin_user, 
+                        admin_previous_entry, 
+                        admin_active, 
+                        admin_timestamp
+                    FROM 
+                        users 
+                    where 
+                        temp_user=?""", temp_usr_uuid)
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = cursor.fetchone()
+    if results is None:
+        return None
+    else:
+        res=[]
+        res.append(dict(zip(columns, results)))
+        # print(results[0])
+        return res[0]['user_id']
+
+#print(l_get_userid_for_temp_user_uuid('FA12615A-8FFE-11ED-85CC-ACDE48001122'))
+
+
 
 
 
@@ -161,8 +194,8 @@ def l_get_userid_for_anvil_user(anvil_usr_id:str):
 
 
 def l_get_anvil_user_as_list_from_table(usr_id):
-    first_id =  l_select_user_by_id(usr_id)['anvil_user_1_int']
-    second_id = l_select_user_by_id(usr_id)['anvil_user_2_int']
+    first_id =  l_get_user_by_id(usr_id)['anvil_user_1_int']
+    second_id = l_get_user_by_id(usr_id)['anvil_user_2_int']
     anvil_list=[]
     anvil_list.append(first_id)
     anvil_list.append(second_id)
@@ -179,15 +212,11 @@ def l_get_anvil_user_components_as_list(anvil_user):
 
 #print(l_get_anvil_user_components_as_list("[344816,524933170]")[0])
 
-
-
-
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
 
 def create_admin_user():
     return functions.make_uuid()
-
 
 def l_add_user  (u_anvil_usr,
                 usr_last_name,
@@ -205,28 +234,29 @@ def l_add_user  (u_anvil_usr,
                      users (
                      user_anvil_user, 
                      anvil_user_1_int, 
-                     anvil_user_2_int, 
+                     anvil_user_2_int,
+                     temp_user,
                      admin_user, 
                      admin_previous_entry, 
                      admin_active, 
-                     admin_timestamp, 
-                     temp_user)
+                     admin_timestamp 
+                     )
                      values (?,?,?,?,?,?,?,?)"""
     cursor.execute(query,
                    (u_anvil_usr,
                     usr1,
                     usr2,
+                    tmp_user,
                     admin_user,
                     0,
                     1,
-                    timestamp,
-                    tmp_user))
+                    timestamp
+                    ))
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
     addresses_users.add_address(usr_last_name,usr_first_name,e_mail,last_id)
     return tmp_user
-
 
 #print(l_add_user("[344817,524933171]","Schumacher","Martin","ms@gmail.com"))
 
@@ -237,11 +267,11 @@ def l_get_new_temp_user_id(anvil_usr_to_change):
         print("get_new_temp_user: no such anvil usr!!")
     else:
         # print('l_get_new_temp_user:',anvil_usr_to_change)
-        current_adminuser = l_select_user_by_id(usr_id)['admin_user']
+        current_adminuser = l_get_user_by_id(usr_id)['admin_user']
         current_timestamp = make_timestamp()
         current_table_name = 'users'
         current_table_id = usr_id
-        current_payload = str(l_select_user_by_id(usr_id))
+        current_payload = str(l_get_user_by_id(usr_id))
         # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
         previous_log_entry = add_log_entry(
             current_adminuser,
@@ -253,7 +283,8 @@ def l_get_new_temp_user_id(anvil_usr_to_change):
         cursor3 = conn.cursor()
 
         temp_usr=create_admin_user()
-
+        # print('get_new_temp user: New temp user is:', temp_usr)
+        # print("test of equality:",temp_usr==str(temp_usr),str(temp_usr))
         query = """UPDATE 
                         users
                     SET 
@@ -271,18 +302,18 @@ def l_get_new_temp_user_id(anvil_usr_to_change):
                                current_timestamp,
                                usr_id))
         cursor3.commit()
-        return temp_usr
+        return str(temp_usr)
     # (id_to_change, "updated")
-# l_get_new_temp_user_id('[344816,524933170]')
+#l_get_new_temp_user_id('[344816,524933170]')
 
 
 def l_change_status_user_id(anvil_usr:str, new_status):
     usr_id=l_get_userid_for_anvil_user(anvil_usr)
-    current_admin_user = l_select_user_by_id(usr_id)['admin_user']
+    current_admin_user = l_get_user_by_id(usr_id)['admin_user']
     current_timestamp = make_timestamp()
     current_table_name = 'users'
     current_table_id = usr_id
-    current_payload = str(l_select_user_by_id(usr_id))
+    current_payload = str(l_get_user_by_id(usr_id))
     # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
     previous_log_entry = add_log_entry(
         current_admin_user,
@@ -305,4 +336,4 @@ def l_change_status_user_id(anvil_usr:str, new_status):
                     new_status,
                     usr_id))
     cursor.commit()
-l_change_status_user_id('[344816,524933170]',True)
+# l_change_status_user_id('[344816,524933170]',True)

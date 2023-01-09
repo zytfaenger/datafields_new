@@ -90,8 +90,71 @@ def l_get_cases_for_userid(anvil_usr_id):
             results.append(dict(zip(columns, row)))
         return results
 
-#print(l_get_cases_for_userid(100))
+def l_get_cases_for_temp_user_id(temp_user_uuid_string):
+    usr_id=users.l_get_userid_for_temp_user_uuid(temp_user_uuid_string)
+    if usr_id is None:
+        print("no such user Id")
+    else:
+        query: str = """SELECT 
+                            case_id, 
+                            client_id_ref, 
+                            dsd_reference, 
+                            language_ref, 
+                            user_id,
+                            shadow_case_id,
+                            shadow_case_indicator,
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active  
+                        FROM 
+                            EasyEL.dbo.cases
+                        WHERE
+                            user_id=? """
 
+        cursor.execute(query,usr_id)
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+#print(l_get_cases_for_temp_user_id('3D97BF5A-9005-11ED-BB17-ACDE48001122'))
+
+def l_get_cases_for_temp_user_id_and_DSD(temp_user_uuid_string,dsd_id):
+    usr_id=users.l_get_userid_for_temp_user_uuid(temp_user_uuid_string)
+    if usr_id is None:
+        print("no such user Id")
+    else:
+        query: str = """SELECT 
+                            case_id, 
+                            client_id_ref, 
+                            dsd_reference, 
+                            language_ref, 
+                            user_id,
+                            shadow_case_id,
+                            shadow_case_indicator,
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active  
+                        FROM 
+                            EasyEL.dbo.cases
+                        WHERE
+                            user_id=? AND dsd_reference=? """
+
+        cursor.execute(query,(usr_id,dsd_id))
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+#print(l_get_cases_for_temp_user_id_and_DSD('3D97BF5A-9005-11ED-BB17-ACDE48001122',130)[0]['case_id'])
 
 
 

@@ -58,6 +58,59 @@ def l_select_dsd_by_case(case_id):
     #print(results[0])
     return results[0]['dsd_reference']
 
+def l_select_dsd_by_dsd_name(dsd_name:str):
+    cursor.execute("""select 
+                        dsd_id, 
+                        dsd_name, 
+                        dsd_domain, 
+                        dsd_year, 
+                        admin_user, 
+                        admin_timestamp, 
+                        admin_previous_entry, 
+                        admin_active
+                    from 
+                        doc_set_def
+                    where 
+                        dsd_name=?""",
+                   dsd_name)
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+
+    #print("Number of records",len(results))
+    if len(results)==0:
+        return None
+    elif len(results)==1:
+        return results
+    else:
+        if results[0]['dsd_domain']=='unique':
+            print("there should be only one record for:", dsd_name)
+            raise "Data inconsistency"
+        else:
+            return results
+
+# a=l_select_dsd_by_dsd_name("Address")
+# for d in a:
+#     print(d['dsd_id'])
+
+def l_select_dsd_id_by_dsd_name(dsd_name:str):
+    res=l_select_dsd_by_dsd_name(dsd_name)
+    if res is None:
+        return None
+    elif len(res)==1:
+        return res[0]['dsd_id']
+    else:
+        dsds=[]
+        for dsd in res:
+            dsds.append(dsd['dsd_id'])
+        return  dsds
+
+print(l_select_dsd_id_by_dsd_name('Address'))
+
+
+
 def l_is_shadow_case(case_id):
     current_dsd_id=l_select_dsd_by_case(case_id)
     current_dsd_record=l_select_dsd_by_id(current_dsd_id)
