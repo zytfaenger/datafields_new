@@ -11,10 +11,7 @@ conn = get_connection()
 cursor = conn.cursor()
 
 
-
-
-
-def l_get_cdm_entries(case_id, dsc_id_ref):
+def l_get_all_active_cdm_entries():
     # cdm = Client Data Main
     query: str = """SELECT 
                         cdm_id, 
@@ -29,19 +26,16 @@ def l_get_cdm_entries(case_id, dsc_id_ref):
                         admin_previous_entry, 
                         admin_active 
                     FROM client_data_main 
-                    WHERE case_id_reference=? AND dsc_reference=? AND admin_active=? 
+                    WHERE admin_active=? 
                     """
-    cursor.execute(query,(case_id,dsc_id_ref,True))
+    cursor.execute(query,True)
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
-
-
-
-
+# print(l_get_all_active_cdm_entries())
 
 def l_get_all_cdm_entries():
     #cdm = Client Data Main
@@ -66,25 +60,85 @@ def l_get_all_cdm_entries():
         results.append(dict(zip(columns, row)))
     return results
 
-
-def l_get_active_cdm_entries(case_id, dsc_id_ref):
+def l_get_active_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
     # cdm = Client Data Main
     query: str = """SELECT 
                         cdm_id, 
                         user_id_reference, 
-                        case_id_reference, 
+                        case_id_reference,
+                        EasyEL.dbo.cases.client_id_ref,
                         dsc_reference, 
                         payload_text, 
                         payload_number, 
                         payload_boolean, 
-                        admin_user, 
-                        admin_timestamp, 
-                        admin_previous_entry, 
-                        admin_active 
-                    FROM client_data_main 
-                    WHERE case_id_reference=? AND dsc_reference=? 
+                        client_data_main.admin_user, 
+                        client_data_main.admin_timestamp, 
+                        client_data_main.admin_previous_entry, 
+                        client_data_main.admin_active 
+                    FROM client_data_main
+                    join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
+                    WHERE case_id_reference=? AND dsc_reference=? and client_data_main.admin_active=?
                     """
-    cursor.execute(query,(case_id,dsc_id_ref))
+    cursor.execute(query,(case_id,dsc_id_ref,True))
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+def l_get_all_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
+    # cdm = Client Data Main
+    query: str = """SELECT 
+                        cdm_id, 
+                        user_id_reference, 
+                        case_id_reference,
+                        EasyEL.dbo.cases.client_id_ref,
+                        dsc_reference, 
+                        payload_text, 
+                        payload_number, 
+                        payload_boolean, 
+                        client_data_main.admin_user, 
+                        client_data_main.admin_timestamp, 
+                        client_data_main.admin_previous_entry, 
+                        client_data_main.admin_active 
+                    FROM client_data_main
+                    join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
+                    WHERE case_id_reference=? AND dsc_reference=? and client_data_main.admin_active=?
+                    """
+    cursor.execute(query,(case_id,dsc_id_ref,True))
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+# print(l_get_all_cdm_entries_by_case_id_and_dsc_id(100, 210))
+
+def l_get_active_cdm_entries_by_client_id(client_id):
+    # cdm = Client Data Main
+    query: str = """SELECT 
+                        cdm_id, 
+                        user_id_reference, 
+                        case_id_reference,
+                        EasyEL.dbo.cases.client_id_ref,
+                        dsc_reference, 
+                        payload_text, 
+                        payload_number, 
+                        payload_boolean, 
+                        client_data_main.admin_user, 
+                        client_data_main.admin_timestamp, 
+                        client_data_main.admin_previous_entry, 
+                        client_data_main.admin_active 
+                    FROM client_data_main
+                    join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
+                    join EasyEL.dbo.doc_set_comp on EasyEL.dbo.doc_set_comp.dsc_id = client_data_main.dsc_reference
+                    WHERE EasyEL.dbo.cases.client_id_ref=? and client_data_main.admin_active=?
+                    order by 
+                    dbo.doc_set_comp.dsc_sequence
+                    """
+    cursor.execute(query,(client_id, True))
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
@@ -93,28 +147,95 @@ def l_get_active_cdm_entries(case_id, dsc_id_ref):
     return results
 
 
-def l_get_cdm_entry_ID(user_id, case_id, dsc_id_ref):
-    # cdm = Client Data Main
-    print("cdm97 - userid, caseId, dsc-id", user_id, case_id, dsc_id_ref)
-    query: str = """SELECT 
-                        cdm_id 
-                    FROM 
-                        client_data_main 
-                    WHERE case_id_reference=? AND dsc_reference=? 
-                    """
-    cursor.execute(query,(case_id,dsc_id_ref))
-    result = cursor.fetchone()
-    if result == None:
-        print("l_get_cdm_entry_ID no record (cdm 105)")
-        entry = l_add_cdm_entry(user_id, case_id, dsc_id_ref, pl_text="None",pl_number=99999,pl_boolean=0)
-        print ("cdm_entry line 108",entry)
-        return entry
-    for row in result:
-        a=row
-        # print(row)
-        # print(a)
-        return a
+#test
+#
+# res=l_get_active_cdm_entries_by_client_id(client_id=110)
+# if res is None:
+#     print(None)
+# else:
+#     print("Anzahl Records",len(res))
+#     if type(res) is list:
+#         for e in res:
+#             print(e)
+#     else:
+#         print("Other type of return")
 
+
+def l_get_active_cdm_entries_by_case_id(case_id):
+    # cdm = Client Data Main
+    query: str = """SELECT 
+                        cdm_id, 
+                        user_id_reference, 
+                        case_id_reference,
+                        EasyEL.dbo.cases.client_id_ref,
+                        dsc_reference, 
+                        payload_text, 
+                        payload_number, 
+                        payload_boolean, 
+                        client_data_main.admin_user, 
+                        client_data_main.admin_timestamp, 
+                        client_data_main.admin_previous_entry, 
+                        client_data_main.admin_active 
+                    FROM client_data_main
+                    join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
+                    join EasyEL.dbo.doc_set_comp on EasyEL.dbo.doc_set_comp.dsc_id = client_data_main.dsc_reference
+                    WHERE case_id_reference=? and client_data_main.admin_active=?
+                    order by 
+                    dbo.doc_set_comp.dsc_sequence
+                    """
+    cursor.execute(query,(case_id, True))
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(zip(columns, row)))
+    return results
+
+
+#test
+#
+# res=l_get_active_cdm_entries_by_case_id(case_id=170)
+# if res is None:
+#     print(None)
+# else:
+#     print("Anzahl Records",len(res))
+#     if type(res) is list:
+#         for e in res:
+#             print(e)
+#     else:
+#         print("Other type of return")
+
+
+
+
+
+
+
+
+
+
+# def l_get_cdm_entry_ID(case_id, dsc_id_ref):
+#     # cdm = Client Data Main
+#     print("cdm97 - userid, caseId, dsc-id", user_id, case_id, dsc_id_ref)
+#     query: str = """SELECT
+#                         cdm_id
+#                     FROM
+#                         client_data_main
+#                     WHERE case_id_reference=? AND dsc_reference=?
+#                     """
+#     cursor.execute(query,(case_id,dsc_id_ref))
+#     result = cursor.fetchone()
+#     if result == None:
+#         print("l_get_cdm_entry_ID no record (cdm 105)")
+#         entry = l_add_cdm_entry(user_id, case_id, dsc_id_ref, pl_text="None",pl_number=99999,pl_boolean=0)
+#         print ("cdm_entry line 108",entry)
+#         return entry
+#     for row in result:
+#         a=row
+#         # print(row)
+#         # print(a)
+#         return a
+#
 
 
 def l_select_cdm_by_id(id):
@@ -166,7 +287,8 @@ def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_bool
         last_id = int(cursor.fetchone()[0])
         return last_id
 
-
+def l_update_cdm_entry(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):  #just dummy as a reminder to make functions complete
+    l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean)
 
 
 def l_change_status_dsd_by_id(id_to_change:int,new_status:int):
@@ -190,8 +312,7 @@ def l_change_status_dsd_by_id(id_to_change:int,new_status:int):
 
 def l_ensure_completeness_of_store_for_case(case_id):
     current_user=get_user_id()
-    current_dsd_id = l_select_dsd_by_case(case_id)
-    current_language_short=l_select_language_short_by_case_id(case_id)
+    # current_dsd_id = l_select_dsd_by_case(case_id)
     current_docsets = doc_set_compositions.l_select_dsc_to_store_for_case_id(case_id)
     counter=0
     for ds in current_docsets:
@@ -201,13 +322,20 @@ def l_ensure_completeness_of_store_for_case(case_id):
         # print(ds['ft_stores_state'])
         # print(ds['ft_stores_data'])
         current_dsc_id=ds['dsc_id']
-        if l_get_cdm_entries(current_dsd_id,current_dsc_id)==[]:
-            l_add_cdm_entry(current_user,case_id,current_dsc_id,'None',99999,False)
+        existing_cdm=l_get_active_cdm_entries_by_case_id_and_dsc_id(case_id=case_id,dsc_id_ref=current_dsc_id)
+        if existing_cdm==[]:
+            l_add_cdm_entry(current_user,case_id,current_dsc_id,'None',99999,False) #if there is none
             print (current_dsc_id, "added")
+        elif type(existing_cdm) ==list:
+            if len(existing_cdm)==1:
+              print(current_dsc_id, " exists!")
+            else:
+                print("Multiple Entries")
+                print(current_dsc_id, " exists!")
         else:
-            print(current_dsc_id, " exists!")
+            print('Return type strange!!!!!')
 
-#l_ensure_completeness_of_store_for_case(180)
+# l_ensure_completeness_of_store_for_case(190)
 
 def l_get_fd_shadow(case_id, field_id):
     print("l_get_shadow, parameters:",case_id, field_id)
@@ -369,7 +497,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
 
             #update normal  Record should exist -:)
             print("set_fd: dsc_id", dsc_id)
-            id_to_change=l_get_cdm_entry_ID(user_id, case_id, dsc_id)
+            id_to_change=l_get_cdm_entry_ID(case_id, dsc_id)
             current_admin_user=get_user()
             current_timestamp = make_timestamp()
             current_table_name = 'client_data_main'
@@ -405,7 +533,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
 
             # shadow Record does not necessarily exist!
             print("set fd: shadow_dsc_id", shadow_dsc_id)
-            id_to_change=l_get_cdm_entry_ID(user_id, shadow_case_id, shadow_dsc_id)
+            id_to_change=l_get_cdm_entry_ID(shadow_case_id, shadow_dsc_id)
             current_admin_user=get_user()
             current_timestamp = make_timestamp()
             current_table_name = 'shadow_client_data_main'

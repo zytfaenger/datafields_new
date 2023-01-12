@@ -17,6 +17,7 @@ def l_get_user_table_columns():
                         anvil_user_1_int,
                         anvil_user_1_int,
                         temp_user,
+                        client_id_reference,
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -54,7 +55,8 @@ def l_get_active_users():
                         user_anvil_user,
                         anvil_user_1_int,
                         anvil_user_1_int,  
-                        temp_user,                      
+                        temp_user,
+                        client_id_reference,                
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -81,7 +83,8 @@ def l_get_all_users():
                         user_anvil_user,
                         anvil_user_1_int,
                         anvil_user_1_int,   
-                        temp_user,                         
+                        temp_user,
+                        client_id_reference,                         
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -100,12 +103,14 @@ def l_get_all_users():
 # print(l_get_all_users())
 
 def l_get_user_by_id(usr_id):
+
     cursor.execute("""SELECT 
                         user_id,
                         user_anvil_user,
                         anvil_user_1_int,
                         anvil_user_2_int,
-                        temp_user,                    
+                        temp_user,
+                        client_id_reference,                    
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -125,16 +130,55 @@ def l_get_user_by_id(usr_id):
         # print(results[0])
         return res[0]
 
-# a=l_select_user_by_id(100)
+# a=l_get_user_by_id(100)
+# print(type(a))
 # print(a['anvil_user_2_int'])
 
+def l_get_user_by_client_id(client_id):
+
+    cursor.execute("""SELECT 
+                        user_id,
+                        user_anvil_user,
+                        anvil_user_1_int,
+                        anvil_user_2_int,
+                        temp_user,
+                        client_id_reference,                    
+                        admin_user, 
+                        admin_previous_entry, 
+                        admin_active, 
+                        admin_timestamp
+                    FROM 
+                        users 
+                    where 
+                        client_id_reference=?""", client_id)
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = cursor.fetchone()
+    if results is None:
+        return None
+    else:
+        res=[]
+        res.append(dict(zip(columns, results)))
+        # print(results[0])
+        return res[0]
+
+#a=l_get_user_by_client_id(140)
+#print(a['anvil_user_2_int'])
+
+
+
+
+
+
 def l_get_userid_for_anvil_user(anvil_usr_id:str):
+    print('get userId for anvil_user', anvil_usr_id)
     cursor.execute("""SELECT 
                         user_id,
                         user_anvil_user,
                         anvil_user_1_int,
                         anvil_user_2_int, 
-                        temp_user,                   
+                        temp_user,
+                        client_id_reference,                  
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -164,7 +208,8 @@ def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
                         user_anvil_user,
                         anvil_user_1_int,
                         anvil_user_2_int,
-                        temp_user,                    
+                        temp_user,
+                        client_id_reference,                    
                         admin_user, 
                         admin_previous_entry, 
                         admin_active, 
@@ -185,12 +230,6 @@ def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
         return res[0]['user_id']
 
 #print(l_get_userid_for_temp_user_uuid('FA12615A-8FFE-11ED-85CC-ACDE48001122'))
-
-
-
-
-
-
 
 
 def l_get_anvil_user_as_list_from_table(usr_id):
@@ -236,17 +275,19 @@ def l_add_user  (u_anvil_usr,
                      anvil_user_1_int, 
                      anvil_user_2_int,
                      temp_user,
+                     client_id_reference,
                      admin_user, 
                      admin_previous_entry, 
                      admin_active, 
                      admin_timestamp 
                      )
-                     values (?,?,?,?,?,?,?,?)"""
+                     values (?,?,?,?,?,?,?,?,?)"""
     cursor.execute(query,
                    (u_anvil_usr,
                     usr1,
                     usr2,
                     tmp_user,
+                    0,
                     admin_user,
                     0,
                     1,
@@ -262,9 +303,11 @@ def l_add_user  (u_anvil_usr,
 
 
 def l_get_new_temp_user_id(anvil_usr_to_change):
+    print('l_get_new_temp_user_id:', anvil_usr_to_change)
     usr_id=l_get_userid_for_anvil_user(anvil_usr_to_change)
     if usr_id is None:
         print("get_new_temp_user: no such anvil usr!!")
+        return None
     else:
         # print('l_get_new_temp_user:',anvil_usr_to_change)
         current_adminuser = l_get_user_by_id(usr_id)['admin_user']
@@ -302,6 +345,7 @@ def l_get_new_temp_user_id(anvil_usr_to_change):
                                current_timestamp,
                                usr_id))
         cursor3.commit()
+
         return str(temp_usr)
     # (id_to_change, "updated")
 #l_get_new_temp_user_id('[344816,524933170]')

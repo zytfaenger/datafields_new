@@ -127,6 +127,7 @@ def l_get_cases_for_temp_user_id_and_DSD(temp_user_uuid_string,dsd_id):
     usr_id=users.l_get_userid_for_temp_user_uuid(temp_user_uuid_string)
     if usr_id is None:
         print("no such user Id")
+        return None
     else:
         query: str = """SELECT 
                             case_id, 

@@ -1,0 +1,5 @@
+        inner join dbo.cases on dbo.clients.client_id=dbo.cases.client_id_ref
+        inner join client_data_main on dbo.doc_set_comp.dsc_id=client_data_main.dsc_reference
+        inner join doc_set_comp on dbo.doc_set_def.dsd_id=dbo.doc_set_comp.dsd_reference
+        inner join doc_set_comp on dbo.fields.field_id=dbo.doc_set_comp.field_id_reference
+        inner join dbo.fields on dbo.field_types.ft_id=dbo.fields.field_typ_id
