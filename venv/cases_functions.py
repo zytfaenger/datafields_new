@@ -1,3 +1,4 @@
+import clients
 import users
 from functions import make_timestamp, get_user
 from log_functions import log_add_log_entry
@@ -89,6 +90,52 @@ def l_get_cases_for_userid(anvil_usr_id):
         for row in cursor.fetchall():
             results.append(dict(zip(columns, row)))
         return results
+
+def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
+    usr_id=users.l_get_userid_for_anvil_user(anvil_usr_id)
+    client_id=clients.l_get_the_client_id_of_a_user_id(usr_id)
+    if usr_id is None:
+        print("no such user Id")
+    else:
+        query: str = """SELECT 
+                            case_id, 
+                            client_id_ref, 
+                            dsd_reference, 
+                            language_ref, 
+                            user_id,
+                            shadow_case_id,
+                            shadow_case_indicator,
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active  
+                        FROM 
+                            EasyEL.dbo.cases
+                        WHERE
+                            client_id_ref=? and dsd_reference=?"""
+
+        cursor.execute(query,(client_id,dsd_id))
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        res = cursor.fetchall()
+
+        if res == []:
+            print('Check Case exists: Case does not exist!')
+            return False
+        else:
+            results = []
+            if len(res) == 1:
+                for row in res:
+                    results.append(dict(zip(columns, row)))
+                if results[0]['dsd_reference']==dsd_id:
+                    print('Check Case exists: Case does exists!')
+                    return (results[0]['case_id'],True)
+
+#print(check_certain_case_exists_for_anvil_userid('[344816,524933170]',200))
+
+
+
 
 def l_get_cases_for_temp_user_id(temp_user_uuid_string):
     usr_id=users.l_get_userid_for_temp_user_uuid(temp_user_uuid_string)
@@ -216,12 +263,12 @@ def l_get_user_id_for_case_id(ca_id):
     """
     cursor.execute(query,ca_id)
     result = cursor.fetchone()
-    user_id=None
-    for r in result:
-        user_id=r
-    #print(dsd)
-    #print(ca_id, " ist: dsd:",dsd)
-    return user_id
+    if result is None:
+        return None
+    else:
+        return result[0]
+
+
 
 def l_get_client_id_for_case_id(ca_id):
     query="""

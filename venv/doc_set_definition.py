@@ -95,6 +95,36 @@ def l_select_dsd_by_dsd_name(dsd_name:str):
 # for d in a:
 #     print(d['dsd_id'])
 
+def l_select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year):
+    cursor.execute("""select 
+                        dsd_id
+                    from 
+                        doc_set_def
+                    where 
+                        dsd_name=? and
+                        dsd_domain=? and
+                        dsd_year=?""",
+                   (dsd_name,dsd_domain,dsd_year))
+    result=cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        return result[0]
+
+#print(l_select_the_dsd_by_dsd_name_domain_year("Address","unique",9999))
+
+
+
+
+
+
+
+
+
+
+
+
+
 def l_select_dsd_id_by_dsd_name(dsd_name:str):
     res=l_select_dsd_by_dsd_name(dsd_name)
     if res is None:
@@ -107,7 +137,22 @@ def l_select_dsd_id_by_dsd_name(dsd_name:str):
             dsds.append(dsd['dsd_id'])
         return  dsds
 
-print(l_select_dsd_id_by_dsd_name('Address'))
+def l_select_the_dsd_id_by_dsd_name_domain_year(dsd_name:str, dsd_domain:str,dsd_year):
+    res=l_select_dsd_by_dsd_name(dsd_name)
+    if res is None:
+        return None
+    elif len(res)==1:
+        return res[0]['dsd_id']
+    else:
+        dsds=[]
+        for dsd in res:
+            dsds.append(dsd['dsd_id'])
+        return  dsds
+
+
+
+
+# print(l_select_dsd_id_by_dsd_name('Address'))
 
 
 

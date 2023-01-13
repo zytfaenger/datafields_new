@@ -166,10 +166,6 @@ def l_get_user_by_client_id(client_id):
 #print(a['anvil_user_2_int'])
 
 
-
-
-
-
 def l_get_userid_for_anvil_user(anvil_usr_id:str):
     print('get userId for anvil_user', anvil_usr_id)
     cursor.execute("""SELECT 
@@ -297,9 +293,44 @@ def l_add_user  (u_anvil_usr,
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
     addresses_users.add_address(usr_last_name,usr_first_name,e_mail,last_id)
-    return tmp_user
+    return last_id
 
 #print(l_add_user("[344817,524933171]","Schumacher","Martin","ms@gmail.com"))
+
+
+def l_upate_client_ref(db_user_id,client_id):
+    current_admin_user_rec = l_get_user_by_id(db_user_id)
+    current_admin_user = current_admin_user_rec['admin_user']
+    current_timestamp = make_timestamp()
+    current_table_name = 'users - update client ref'
+    current_table_id = db_user_id
+    current_payload = str(l_get_user_by_id(db_user_id))
+    # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+    previous_log_entry = add_log_entry(current_admin_user,
+                                       current_timestamp,
+                                       current_table_name,
+                                       current_table_id,
+                                       current_payload)
+    # print(previous_log_entry)
+    cursor3 = conn.cursor()
+    query = """   UPDATE 
+                    users 
+                SET 
+                    client_id_reference=?,
+                    admin_user=?,
+                    admin_timestamp=?,
+                    admin_previous_entry=?,
+                    admin_active=?
+                WHERE 
+                    users.user_id=?"""
+    cursor.execute(query, (
+        client_id,
+        current_admin_user,
+        current_timestamp,
+        previous_log_entry,
+        1,
+        db_user_id))
+    cursor3.commit()
 
 
 def l_get_new_temp_user_id(anvil_usr_to_change):

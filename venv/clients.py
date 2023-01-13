@@ -158,7 +158,7 @@ def l_get_all_clients_of_a_user_id(user_id): #a user can have many clients
 #         print(c['client_name'])
 
 
-def l_get_the_client_of_a_user_id(user_id): #every user is a client
+def l_get_the_client_id_of_a_user_id(user_id): #every user is a client
 
     cursor.execute("""SELECT 
                         client_id, 
@@ -177,14 +177,14 @@ def l_get_the_client_of_a_user_id(user_id): #every user is a client
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = cursor.fetchall()
-    if results is None:
+    if results == []:
         return None
     else:
         res=[]
         for row in results:
             res.append(dict(zip(columns, row)))
         # print(results[0])
-        return res
+        return res[0]['client_id']
 
 # a=l_get_the_client_of_a_user_id(100)
 # if a is None:

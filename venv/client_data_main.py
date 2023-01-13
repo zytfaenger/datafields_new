@@ -1,5 +1,6 @@
 import cases_functions
 import doc_set_compositions
+import users
 from functions import make_timestamp, get_user, get_user_id
 from log_functions import log_add_log_entry
 from connections import get_connection
@@ -207,37 +208,6 @@ def l_get_active_cdm_entries_by_case_id(case_id):
 
 
 
-
-
-
-
-
-
-
-# def l_get_cdm_entry_ID(case_id, dsc_id_ref):
-#     # cdm = Client Data Main
-#     print("cdm97 - userid, caseId, dsc-id", user_id, case_id, dsc_id_ref)
-#     query: str = """SELECT
-#                         cdm_id
-#                     FROM
-#                         client_data_main
-#                     WHERE case_id_reference=? AND dsc_reference=?
-#                     """
-#     cursor.execute(query,(case_id,dsc_id_ref))
-#     result = cursor.fetchone()
-#     if result == None:
-#         print("l_get_cdm_entry_ID no record (cdm 105)")
-#         entry = l_add_cdm_entry(user_id, case_id, dsc_id_ref, pl_text="None",pl_number=99999,pl_boolean=0)
-#         print ("cdm_entry line 108",entry)
-#         return entry
-#     for row in result:
-#         a=row
-#         # print(row)
-#         # print(a)
-#         return a
-#
-
-
 def l_select_cdm_by_id(id):
     cursor.execute("""select 
                         cdm_id, 
@@ -267,7 +237,7 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
 
 
 def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_boolean=None):
-        admin_user=get_user()
+        admin_user=users.l_get_user_by_id(user_id)['admin_user']
         timestamp=make_timestamp()
         cursor.execute("""insert into dbo.client_data_main 
                         (user_id_reference, 
@@ -286,6 +256,42 @@ def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_bool
         cursor.execute("SELECT @@IDENTITY AS ID;")
         last_id = int(cursor.fetchone()[0])
         return last_id
+
+
+def l_get_cdm_entry_ID(case_id, dsc_id_ref):
+    # cdm = Client Data Main
+    usr_from_case=cases_functions.l_get_user_id_for_case_id(case_id)
+    if usr_from_case is None:
+        print('Case', case_id,'does not exist, aborting!')
+        print("cdm_get_cdm_entry - userid, caseId, dsc-id", usr_from_case, case_id, dsc_id_ref)
+        return None
+    else:
+        print("cdm_get_cdm_entry - userid, caseId, dsc-id", usr_from_case, case_id, dsc_id_ref)
+        query: str = """SELECT
+                            cdm_id
+                        FROM
+                            client_data_main
+                        WHERE case_id_reference=? AND dsc_reference=?
+                        """
+        cursor.execute(query,(case_id,dsc_id_ref))
+        result = cursor.fetchall()
+
+        if result == []:
+            print("l_get_cdm_entry_ID no record für case_id/dsc_id",case_id,dsc_id_ref)
+            print('generating new record')
+            entry = l_add_cdm_entry(usr_from_case, case_id, dsc_id_ref, pl_text="None",pl_number=99999,pl_boolean=0)
+            print ("cdm_entry line 108",entry)
+            return entry #Id des neuen Eintrags
+        else:
+            if type(result) is list:
+                return result[0][0]
+            elif type(result) is int:
+                return result
+            else:
+              print('get_cdm_entry: multiple results but there should be only one')
+              return None
+
+#print(l_get_cdm_entry_ID(case_id=170,dsc_id_ref=1170))
 
 def l_update_cdm_entry(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):  #just dummy as a reminder to make functions complete
     l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean)
