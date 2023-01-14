@@ -244,12 +244,14 @@ def l_get_dsd_reference_for_case_id(ca_id):
     """
     cursor.execute(query,ca_id)
     result = cursor.fetchone()
-    dsd = None
-    for r in result:
-        dsd=r
+    if result is None:
+        return None
+    else:
+        for r in result:
+            dsd=r
     # print('l_get_dsd_reference_for_case_id',dsd)
     # print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
-    return dsd
+        return dsd
 
 #print(l_get_dsd_reference_for_case_id(100))
 
@@ -373,9 +375,7 @@ def l_select_language_id_from_case_id(case_id):
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 
-
-
-def l_add_case(client_id, dsd_reference, language_ref, user_id, shdw_case_ind=0):
+def l_add_case(client_id, dsd_reference, language_ref, user_id, shadow_case_id=0, shdw_case_ind=False ):
     admin_user=get_user()
     timestamp=make_timestamp()
     query= """insert into 
