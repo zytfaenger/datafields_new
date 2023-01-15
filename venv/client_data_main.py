@@ -449,7 +449,7 @@ def l_get_fd(case_id, field_id):
         #  print(result)
         return result
 
-# print(l_get_fd(case_id=110,field_id=170))
+print(l_get_fd(case_id=310,field_id=260))
 
 # print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
 
