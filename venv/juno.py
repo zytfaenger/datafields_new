@@ -38,7 +38,7 @@ def ensure_dsd(dsd_name,dsd_domain,dsd_year):
 
 def ensure_case(anvil_user_id,dsd_id,client_id,user_id):
     shd_dsd_id=doc_set_definition.l_select_the_dsd_id_by_dsd_name_domain_year('Shadowset','all',9999)
-    shadow_case_check=cases_functions.l_check_certain_case_exists_for_anvil_userid(anvil_user_id, shd_dsd_id)
+    shadow_case_check=cases_functions.l_check_certain_case_exists_for_client_id(client_id, shd_dsd_id)
     if shadow_case_check[1] is False:
         shdw_case_id=cases_functions.l_add_case(client_id,shd_dsd_id,1,user_id,0,True)
         shadow_case_check=(shdw_case_id,True)
@@ -50,13 +50,15 @@ def ensure_case(anvil_user_id,dsd_id,client_id,user_id):
         print("Strange_result")
         shdw_case_ok=False
 
-    case_check = cases_functions.l_check_certain_case_exists_for_anvil_userid(anvil_user_id, dsd_id)
+    case_check = cases_functions.l_check_certain_case_exists_for_client_id(client_id, dsd_id)
     if case_check[1] is False:
         case_id=cases_functions.l_add_case(client_id,dsd_id,1,user_id,shdw_case_id,False)
         case_check=(case_id,True)
     if type(case_check) is tuple:
         case_id=case_check[0]
         case_ok=case_check[1] and shdw_case_ok #both must be o.k.
+        if shdw_case_ok is True:
+            cases_functions.l_update_cases_shadow_case_id(client_id,shdw_case_id)
         print('ensure_case_id',case_id,"gesetzt")
         return(case_id, case_ok)
     else:
@@ -90,12 +92,11 @@ def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,d
     case_ok = case_ensured[1]
     if case_ok==False: context_created=False
     if context_created == True:
-        context_result= {}
-        context_result['context_created']=True,
-        context_result['anvil_user_id_str'] = anvil_user_id_text
-        context_result['client_id'] = client_id,
-        context_result['dsd_id'] = dsd_id,
-        context_result['case_id'] = case_id
+        context_result = {'context_created': True,
+                          'anvil_user_id_str': anvil_user_id_text,
+                          'client_id': client_id,
+                          'dsd_id': dsd_id,
+                          'case_id': case_id}
     else:
         context_result = {}
         context_result['context_created'] = False

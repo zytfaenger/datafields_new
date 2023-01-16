@@ -122,7 +122,7 @@ def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #che
 
         if res == []:
             print('Check Case exists: Case does not exist!')
-            return False
+            return (0,False)
         else:
             results = []
             if len(res) == 1:
@@ -134,6 +134,43 @@ def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #che
 
 #print(check_certain_case_exists_for_anvil_userid('[344816,524933170]',200))
 
+
+def l_check_certain_case_exists_for_client_id(client_id, dsd_id):
+    query: str = """SELECT 
+                        case_id, 
+                        client_id_ref, 
+                        dsd_reference, 
+                        language_ref, 
+                        user_id,
+                        shadow_case_id,
+                        shadow_case_indicator,
+                        admin_user, 
+                        admin_timestamp, 
+                        admin_previous_entry, 
+                        admin_active  
+                    FROM 
+                        EasyEL.dbo.cases
+                    WHERE
+                        client_id_ref=? and dsd_reference=?"""
+    cursor.execute(query,(client_id,dsd_id))
+
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    res = cursor.fetchall()
+
+    if res == []:
+        print('Check Case exists: Case does not exist!')
+        return (0,False)
+    else:
+        results = []
+        if len(res) == 1:
+            for row in res:
+                results.append(dict(zip(columns, row)))
+            if results[0]['dsd_reference']==dsd_id:
+                print('Check Case exists: Case does exists!')
+                return (results[0]['case_id'],True)
+
+print(l_check_certain_case_exists_for_client_id(230,120))
 
 
 
@@ -224,11 +261,15 @@ def l_select_case_by_id(id):
                         where case_id=?""", id)
     columns = [column[0] for column in cursor.description]
     # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-        #print(results[0])
-    return results[0]
+    results = cursor.fetchall()
+    if results == []:
+        return None
+    else:
+        res = []
+        for row in results:
+            res.append(dict(zip(columns, row)))
+            #print(results[0])
+        return res[0]
 
 #print(l_select_case_by_id(110))
 
@@ -376,7 +417,7 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 
 def l_add_case(client_id, dsd_reference, language_ref, user_id, shadow_case_id=0, shdw_case_ind=False ):
-    admin_user=get_user()
+    admin_user=users.l_get_user_by_id(user_id)['admin_user']
     timestamp=make_timestamp()
     query= """insert into 
                      EasyEL.dbo.cases (client_id_ref, 
@@ -399,15 +440,16 @@ def l_add_case(client_id, dsd_reference, language_ref, user_id, shadow_case_id=0
 #l_add_case(110,100,1,100,0)
 
 
-def l_add_shadow_case(client_id,language_ref,user_id,dsd_reference=120,shdw_case_ind=1):
-    return (client_id,dsd_reference,language_ref,user_id,1)
+def l_add_shadow_case(client_id,language_ref,user_id,dsd_reference=120,shdw_case_ind=True):
+    return l_add_case(client_id,dsd_reference,language_ref,user_id,shadow_case_id=1,shdw_case_ind=True)
 
 def l_update_cases_shadow_case_id(client_id,shdw_case_id):
-    current_user = get_user()
+    user_id=users.l_get_user_by_client_id(client_id)
+    current_user = user_id['admin_user']
     current_timestamp = make_timestamp()
     current_table_name = 'cases'
     current_table_id = client_id
-    current_payload = str(l_select_case_by_id(client_id))
+    current_payload = str(l_select_case_by_id(shdw_case_id))
     # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
     previous_log_entry = add_log_entry(current_user,
                                        current_timestamp,
@@ -425,7 +467,7 @@ def l_update_cases_shadow_case_id(client_id,shdw_case_id):
                    (shdw_case_id, client_id, shdw_case_id))
     cursor.commit()
 
-l_update_cases_shadow_case_id(110,170)
+#l_update_cases_shadow_case_id(110,170)
 
 
 def l_update_cases(id_to_change, client_id_ref, dsd_reference, language_ref, user_id):

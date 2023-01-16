@@ -449,7 +449,7 @@ def l_get_fd(case_id, field_id):
         #  print(result)
         return result
 
-print(l_get_fd(case_id=310,field_id=260))
+# print(l_get_fd(case_id=310,field_id=260))
 
 # print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
 
@@ -497,7 +497,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                 msg = ("Set_fd: Bei case id {} ist die Shadow_id nicht gesetzt!").format(case_id)
                 return msg
         else:
-            shadow_case_id = case_id  # stellt case auf sich selbst ein
+            # shadow_case_id = case_id  # stellt case auf sich selbst ein
             dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
             shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
 
