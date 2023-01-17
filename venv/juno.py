@@ -1,5 +1,7 @@
 import cases_functions
+import client_data_main
 import clients
+import doc_set_compositions
 import doc_set_definition
 import users
 
@@ -103,5 +105,104 @@ def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,d
 
     return context_result
 
+def l_get_client_list(anvil_user_id):
+    user_id=users.l_get_userid_for_anvil_user(anvil_user_id)
+    cl_list = clients.l_get_all_clients_of_a_user_id(user_id)
+    client_list=[]
+    for c in cl_list:
+        #print(c['client_id'])
+
+        shd_case=cases_functions.l_get_shadow_case_id_for_client_id(c['client_id'])
+        #print('Shadow_cas=:',shd_case)
+
+        dsc_name = doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 110)
+        dsc_vorname = doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 120)
+        dsc_street = doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 140)
+        dsc_town = doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 170)
+        dsc_birthday=doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 210)
+        dsc_socsec= doc_set_compositions.l_select_dsc_id_by_case_and_field(shd_case, 200)
+
+        client_entry={}
+        client_entry['client_id']=c['client_id']
+        client_entry['admin_active']=c['admin_active']
+        client_entry['client_desc']=c['client_name']
+        client_entry['is_user'] = c['client_is_user']
+        #client_id
+        if dsc_name is None:
+            name='None'
+        else:
+            cdm_entry = client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case, dsc_name)
+            if cdm_entry is None:
+                name="None"
+            else:
+                name = cdm_entry[0]['payload_text']
+            #print('Name:', name)
+
+        if dsc_vorname is None:
+            vorname='None'
+        else:
+            cdm_entry =client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case,dsc_vorname)
+            if cdm_entry is None:
+                vorname="None"
+            else:
+                vorname=cdm_entry [0]['payload_text']
+            #print('Vorname:', vorname)
+
+        client_entry['client_name'] =("{}, {}").format(name, vorname)
+
+        #address
+        if dsc_street is None:
+            address='None'
+        else:
+            cdm_entry = client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case, dsc_street)
+            if cdm_entry is None:
+                address = "None"
+            else:
+                address = cdm_entry[0]['payload_text']
+            #print('Adresse:', address)
+        client_entry['address'] = address
+
+        # town
+        if dsc_town is None:
+            town='None'
+        else:
+            cdm_entry = client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case, dsc_town)
+            if cdm_entry is None:
+                town = "None"
+            else:
+                town = cdm_entry[0]['payload_text']
+            #print('Town:', town)
+        client_entry['town'] = town
+
+        # town
+        if dsc_birthday is None:
+            birthday='None'
+        else:
+            cdm_entry = client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case, dsc_birthday)
+            if cdm_entry is None:
+                birthday = "None"
+            else:
+                birthday = cdm_entry[0]['payload_text']
+            #print('Birthday:', birthday)
+        client_entry['birthday'] = birthday
+
+        if dsc_socsec is None:
+            socsec='None'
+        else:
+            cdm_entry = client_data_main.l_get_active_cdm_entries_by_case_id_and_dsc_id(shd_case, dsc_socsec)
+            if cdm_entry is None:
+                socsec = "None"
+            else:
+                socsec = cdm_entry[0]['payload_text']
+            #print('AHV:', socsec)
+        client_entry['socsec'] = socsec
+
+        client_list.append(client_entry)
+
+    return client_list
+
+
+
+#print(l_get_client_list('[344816,524933170]'))
 
 #print(l_ensure_user_context('[344816,581704467]','fs@msfp.ch',"Address","unique",9999))

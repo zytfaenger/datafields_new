@@ -83,10 +83,15 @@ def l_get_active_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
     cursor.execute(query,(case_id,dsc_id_ref,True))
     columns = [column[0] for column in cursor.description]
     # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
+    results = cursor.fetchall()
+    if results==[]:
+        return None
+    else:
+        res=[]
+    for row in results:
+        res.append(dict(zip(columns, row)))
+    return res
+
 
 def l_get_all_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
     # cdm = Client Data Main
@@ -105,9 +110,9 @@ def l_get_all_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
                         client_data_main.admin_active 
                     FROM client_data_main
                     join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
-                    WHERE case_id_reference=? AND dsc_reference=? and client_data_main.admin_active=?
+                    WHERE case_id_reference=? AND dsc_reference=?
                     """
-    cursor.execute(query,(case_id,dsc_id_ref,True))
+    cursor.execute(query,(case_id,dsc_id_ref))
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = []
@@ -115,7 +120,7 @@ def l_get_all_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
         results.append(dict(zip(columns, row)))
     return results
 
-# print(l_get_all_cdm_entries_by_case_id_and_dsc_id(100, 210))
+#print(l_get_all_cdm_entries_by_case_id_and_dsc_id(100, 210))
 
 def l_get_active_cdm_entries_by_client_id(client_id):
     # cdm = Client Data Main
@@ -147,6 +152,7 @@ def l_get_active_cdm_entries_by_client_id(client_id):
         results.append(dict(zip(columns, row)))
     return results
 
+# print(l_get_active_cdm_entries_by_client_id(230))
 
 #test
 #
@@ -237,7 +243,7 @@ def add_log_entry(user, current_timestamp, table_name,table_id, payload):
 
 
 def l_add_cdm_entry(user_id, case_id, dsc_id,pl_text=None,pl_number=None,pl_boolean=None):
-        admin_user=users.l_get_user_by_id(user_id)['admin_user']
+        admin_user=users.l_get_admin_user_by_id(user_id)
         timestamp=make_timestamp()
         cursor.execute("""insert into dbo.client_data_main 
                         (user_id_reference, 
@@ -580,7 +586,6 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                 cursor4.commit()
 
 #l_set_fd(100, 100, 170,'Carouge',1200,'=')
-
 
 
 

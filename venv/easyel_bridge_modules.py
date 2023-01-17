@@ -413,5 +413,8 @@ def ensure_doc(case_id, field_id):
 def ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year):
     return juno.l_ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year)
 
+@anvil.server.callable()
+def get_client_list(anvil_user_id):
+    return juno.l_get_client_list(anvil_user_id)
 
 anvil.server.wait_forever()

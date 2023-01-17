@@ -1,7 +1,7 @@
 import connections
+import functions
 import users
-from functions import make_timestamp
-from log_functions import log_add_log_entry
+import log_functions
 
 conn = connections.get_connection()
 
@@ -137,7 +137,10 @@ def l_get_all_clients_of_a_user_id(user_id): #a user can have many clients
                     FROM 
                         clients 
                     WHERE 
-                        client_user_ref=?""", user_id)
+                        client_user_ref=?
+                    order by 
+                        client_is_user DESC """, user_id)
+
     columns = [column[0] for column in cursor.description]
     # print(columns)
     results = cursor.fetchall()
@@ -194,7 +197,7 @@ def l_get_the_client_id_of_a_user_id(user_id): #every user is a client
 #         print(c['client_name'])
 
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
-    return log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
+    return log_functions.log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
 
 def l_add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
     current_admin_user_rec = users.l_get_user_by_id(user_ref)
@@ -204,7 +207,7 @@ def l_add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
     else:
         if type(current_admin_user_rec)==dict:
             current_admin_user=current_admin_user_rec['admin_user']
-            timestamp = make_timestamp()
+            timestamp = functions.make_timestamp()
             query = """insert into 
                          clients (
                              client_user_ref,
@@ -247,7 +250,7 @@ def l_update_client(client_id_to_change, user_ref, client_is_user,  name):
             return None
         else:
             current_admin_user = current_admin_user_rec['admin_user']
-            current_timestamp = make_timestamp()
+            current_timestamp = functions.make_timestamp()
             current_table_name = 'clients'
             current_table_id=client_id_to_change
             current_payload=str(l_get_client_by_id(client_id_to_change))
@@ -279,8 +282,8 @@ def l_update_client(client_id_to_change, user_ref, client_is_user,  name):
 
 
 def l_change_status_client(client_id, user_id, new_status):
-    current_admin_user = users.l_get_user_by_id(user_id)['admin_user']
-    current_timestamp = make_timestamp()
+    current_admin_user = users.l_get_admin_user_by_id(user_id)
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
     current_table_id = client_id
     current_payload = str(l_get_client_by_id(client_id))
@@ -306,4 +309,5 @@ def l_change_status_client(client_id, user_id, new_status):
                     new_status,
                     client_id))
     cursor.commit()
-l_change_status_client(150,100,True)
+# l_change_status_client(150,100,True)
+

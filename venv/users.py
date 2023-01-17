@@ -134,6 +134,13 @@ def l_get_user_by_id(usr_id):
 # print(type(a))
 # print(a['anvil_user_2_int'])
 
+def l_get_admin_user_by_id(usr_id):
+    return l_get_user_by_id(usr_id)['admin_user']
+
+#print(l_get_admin_user_by_id(100))
+
+
+
 def l_get_user_by_client_id(client_id):
 
     cursor.execute("""SELECT 
@@ -163,6 +170,7 @@ def l_get_user_by_client_id(client_id):
         return res[0]
 
 #a=l_get_user_by_client_id(140)
+#print(a)
 #print(a['anvil_user_2_int'])
 
 

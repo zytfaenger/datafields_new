@@ -1,10 +1,12 @@
 import clients
+import connections
+import functions
 import users
-from functions import make_timestamp, get_user
-from log_functions import log_add_log_entry
-from connections import get_connection
+import log_functions
 
-conn = get_connection()
+
+conn = connections.get_connection()
+#conn = get_connection()
 
 cursor = conn.cursor()
 def l_get_active_cases():
@@ -170,7 +172,7 @@ def l_check_certain_case_exists_for_client_id(client_id, dsd_id):
                 print('Check Case exists: Case does exists!')
                 return (results[0]['case_id'],True)
 
-print(l_check_certain_case_exists_for_client_id(230,120))
+#print(l_check_certain_case_exists_for_client_id(230,120))
 
 
 
@@ -350,6 +352,30 @@ def l_get_shadow_case_id_for_case_id(ca_id):
         return shadow_case_id
 
 
+
+def l_get_shadow_case_id_for_client_id(client_id):
+    query= """
+        select shadow_case_id 
+        from
+         EasyEL.dbo.cases
+        where
+         client_id_ref=?   
+    """
+    cursor.execute(query,client_id)
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        shadow_case_id = None
+        for r in result:
+            shadow_case_id=r
+        return shadow_case_id
+
+#print(l_get_shadow_case_id_for_client_id(110))
+
+
+
+
 def l_get_shadow_case_indicator_for_case_id(ca_id):
     query= """
         select shadow_case_indicator
@@ -414,11 +440,11 @@ def l_select_language_id_from_case_id(case_id):
 
 
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
-    return log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
+    return log_functions.log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
 
 def l_add_case(client_id, dsd_reference, language_ref, user_id, shadow_case_id=0, shdw_case_ind=False ):
-    admin_user=users.l_get_user_by_id(user_id)['admin_user']
-    timestamp=make_timestamp()
+    admin_user=users.l_get_admin_user_by_id(user_id)
+    timestamp=functions.make_timestamp()
     query= """insert into 
                      EasyEL.dbo.cases (client_id_ref, 
                                         dsd_reference, 
@@ -446,7 +472,7 @@ def l_add_shadow_case(client_id,language_ref,user_id,dsd_reference=120,shdw_case
 def l_update_cases_shadow_case_id(client_id,shdw_case_id):
     user_id=users.l_get_user_by_client_id(client_id)
     current_user = user_id['admin_user']
-    current_timestamp = make_timestamp()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
     current_table_id = client_id
     current_payload = str(l_select_case_by_id(shdw_case_id))
@@ -472,8 +498,8 @@ def l_update_cases_shadow_case_id(client_id,shdw_case_id):
 
 def l_update_cases(id_to_change, client_id_ref, dsd_reference, language_ref, user_id):
     #print('l_updateft:',id_to_change,type,description,sequence)
-    current_adminuser=get_user()
-    current_timestamp = make_timestamp()
+    current_adminuser=users.l_get_admin_user_by_id(user_id)
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
     current_table_id=id_to_change
     current_payload=str(l_select_case_by_id(id_to_change))
@@ -507,13 +533,13 @@ def l_update_cases(id_to_change, client_id_ref, dsd_reference, language_ref, use
 
 
 
-def l_change_status_case_by_id(id_to_change:int,new_status:int):
-    current_user=get_user()
+def l_change_status_case_by_id(ca_to_change:int,new_status:int):
+    current_user=users.l_get_admin_user_by_id(ca_to_change)
     #print(current_user)
-    current_timestamp = make_timestamp()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
-    current_table_id=id_to_change
-    current_payload=str(l_select_case_by_id(id_to_change))
+    current_table_id=ca_to_change
+    current_payload=str(l_select_case_by_id(ca_to_change))
     #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
     previous_log_entry=add_log_entry(current_user,
                                      current_timestamp,
@@ -531,5 +557,5 @@ def l_change_status_case_by_id(id_to_change:int,new_status:int):
                             admin_previous_entry=?,
                             admin_active=? 
                         WHERE case_id=?""",
-                       (current_user,current_timestamp,previous_log_entry,new_status,id_to_change))
+                       (current_user,current_timestamp,previous_log_entry,new_status,ca_to_change))
     cursor.commit()
