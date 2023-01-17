@@ -355,13 +355,13 @@ def l_get_shadow_case_id_for_case_id(ca_id):
 
 def l_get_shadow_case_id_for_client_id(client_id):
     query= """
-        select shadow_case_id 
+        select case_id
         from
          EasyEL.dbo.cases
         where
-         client_id_ref=?   
+         client_id_ref=?  and shadow_case_indicator=?
     """
-    cursor.execute(query,client_id)
+    cursor.execute(query,(client_id,True))
     result = cursor.fetchone()
     if result is None:
         return None
