@@ -362,8 +362,16 @@ def get_cases_for_temp_user_id_and_DSD(tmp_usr_uuid_str,dsd_id_ref):
     return cases_functions.l_get_cases_for_temp_user_id_and_DSD(tmp_usr_uuid_str,dsd_id_ref)
 
 @anvil.server.callable()
+def get_cases_for_a_client_id(client_id):
+    return cases_functions.l_get_cases_for_a_client_id(client_id)
+
+@anvil.server.callable()
 def check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):
     return cases_functions.l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id)
+
+@anvil.server.callable()
+def check_certain_case_exists_for_client_id(client_id, dsd_id):
+    return cases_functions.l_check_certain_case_exists_for_client_id(client_id, dsd_id)
 
 @anvil.server.callable()
 def add_case(client_id,dsd_id,language_ref,user_id,shadow_case_id=0,shdw_case_ind=False):
@@ -400,6 +408,10 @@ def add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
 @anvil.server.callable()
 def update_client(client_id_to_change, user_ref, client_is_user,  name):
     return clients.l_update_client(client_id_to_change, user_ref, client_is_user, name)
+
+@anvil.server.callable()
+def get_client_by_id(client_id):
+    return clients.l_get_client_by_id(client_id)
 
 # ---- dokument functions.py --------------
 

@@ -1,4 +1,3 @@
-import cases_functions
 import clients
 import connections
 import functions
@@ -93,6 +92,47 @@ def l_get_cases_for_userid(anvil_usr_id):
         for row in cursor.fetchall():
             results.append(dict(zip(columns, row)))
         return results
+
+def l_get_cases_for_a_client_id(client_id):
+    query: str = """SELECT 
+                        EasyEL.dbo.cases.case_id, 
+                        EasyEL.dbo.cases.client_id_ref, 
+                        EasyEL.dbo.cases.dsd_reference, 
+                        EasyEL.dbo.doc_set_def.dsd_name,
+                        EasyEL.dbo.doc_set_def.dsd_domain,
+                        EasyEL.dbo.doc_set_def.dsd_year,
+                        EasyEL.dbo.cases.language_ref, 
+                        EasyEL.dbo.cases.user_id,
+                        EasyEL.dbo.cases.shadow_case_id,
+                        EasyEL.dbo.cases.shadow_case_indicator,
+                        EasyEL.dbo.cases.admin_user, 
+                        EasyEL.dbo.cases.admin_timestamp, 
+                        EasyEL.dbo.cases.admin_previous_entry, 
+                        EasyEL.dbo.cases.admin_active  
+                    FROM 
+                        EasyEL.dbo.cases
+                    left outer join 
+                        doc_set_def on dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
+
+                    WHERE
+                        client_id_ref=? """
+
+    cursor.execute(query,client_id)
+
+    columns = [column[0] for column in cursor.description]
+    # print(columns)
+    results = cursor.fetchall()
+    if results == []:
+        return [None]
+    else:
+        res=[]
+        for row in results:
+            res.append(dict(zip(columns, row)))
+        return res
+a=l_get_cases_for_a_client_id(210)
+for i in range(0,len(a)):
+    print(a[i])
+
 
 def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
     usr_id=users.l_get_userid_for_anvil_user(anvil_usr_id)
