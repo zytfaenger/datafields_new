@@ -17,10 +17,10 @@ def ensure_user(anv_usr_id_txt,anv_usr_email):
     else:
         return (user_id, False)
 
-def ensure_client(user_id):
+def ensure_client(user_id,client_desc="offen"):
     client_id=clients.l_get_the_client_id_of_a_user_id(user_id)
     if client_id is None:
-        client_id=clients.l_add_client_to_clients(user_ref=user_id, client_is_user=True, client_name="offen")
+        client_id=clients.l_add_client_to_clients(user_ref=user_id, client_is_user=True, client_name=client_desc)
 
     if type(user_id) is int:
         print('ensure_client_id',client_id,"gesetzt")
@@ -38,7 +38,7 @@ def ensure_dsd(dsd_name,dsd_domain,dsd_year):
     else:
         return (dsd_id, False)
 
-def ensure_case(anvil_user_id,dsd_id,client_id,user_id):
+def ensure_case(dsd_id,client_id,user_id):
     shd_dsd_id=doc_set_definition.l_select_the_dsd_id_by_dsd_name_domain_year('Shadowset','all',9999)
     shadow_case_check=cases_functions.l_check_certain_case_exists_for_client_id(client_id, shd_dsd_id)
     if shadow_case_check[1] is False:
@@ -60,7 +60,7 @@ def ensure_case(anvil_user_id,dsd_id,client_id,user_id):
         case_id=case_check[0]
         case_ok=case_check[1] and shdw_case_ok #both must be o.k.
         if shdw_case_ok is True:
-            cases_functions.l_update_cases_shadow_case_id(client_id,shdw_case_id)
+            cases_functions.l_update_shadow_case_id_for_a_given_case_id(client_id,case_id,shdw_case_id)
         print('ensure_case_id',case_id,"gesetzt")
         return(case_id, case_ok)
     else:
@@ -89,7 +89,7 @@ def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,d
     dsd_ok = client_ensured[1]
     if dsd_ok==False: context_created=False
 # - ensure there is a case
-    case_ensured=ensure_case(anvil_user_id_text,dsd_id,client_id,user_id)
+    case_ensured=ensure_case(dsd_id,client_id,user_id)
     case_id = case_ensured[0]
     case_ok = case_ensured[1]
     if case_ok==False: context_created=False
@@ -201,8 +201,22 @@ def l_get_client_list(anvil_user_id):
 
     return client_list
 
+def l_add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
+    check_no_duplicate_clients=True #can be implemented later
+    if check_no_duplicate_clients is True:
+        user_id = users.l_get_userid_for_anvil_user(anvil_user_txt)
+        client_id=clients.l_add_client_to_clients(user_ref=user_id, client_is_user=False, client_name=client_desc)
+    else:
+        client_id = None
 
-
+    if client_id is None:
+        case_result=(None,False)
+    else:
+        dsd_there=ensure_dsd(dsd,domain,year)
+        if dsd_there[1] is True:
+            dsd_id=dsd_there[0]
+        case_result = ensure_case(dsd_id,client_id,user_id)
+    return case_result
 #print(l_get_client_list('[344816,524933170]'))
 
 #print(l_ensure_user_context('[344816,581704467]','fs@msfp.ch',"Address","unique",9999))

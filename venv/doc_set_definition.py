@@ -16,6 +16,8 @@ def l_get_active_dsd():
         results.append(dict(zip(columns, row)))
     return results
 
+#print(l_get_active_dsd())
+
 def l_get_all_dsd():
     query: str = "select dsd_id, dsd_name, dsd_domain, dsd_year, admin_user, admin_timestamp, admin_previous_entry, " \
                  "admin_active  from dbo.doc_set_def order by dsd_year,dsd_domain,dsd_name"

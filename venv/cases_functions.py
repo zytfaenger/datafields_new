@@ -1,3 +1,4 @@
+import cases_functions
 import clients
 import connections
 import functions
@@ -470,8 +471,9 @@ def l_add_shadow_case(client_id,language_ref,user_id,dsd_reference=120,shdw_case
     return l_add_case(client_id,dsd_reference,language_ref,user_id,shadow_case_id=1,shdw_case_ind=True)
 
 def l_update_cases_shadow_case_id(client_id,shdw_case_id):
-    user_id=users.l_get_user_by_client_id(client_id)
-    current_user = user_id['admin_user']
+    user_id=cases_functions.l_get_user_id_for_case_id(client_id)
+    user_record=users.l_get_user_by_id(user_id)
+    current_user = user_record['admin_user']
     current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
     current_table_id = client_id
@@ -492,6 +494,33 @@ def l_update_cases_shadow_case_id(client_id,shdw_case_id):
                            client_id_ref = ? and case_id <> ? """,
                    (shdw_case_id, client_id, shdw_case_id))
     cursor.commit()
+
+# l_update_cases_shadow_case_id(310,560)
+def l_update_shadow_case_id_for_a_given_case_id(client_id,case_id, shdw_case_id):
+    user_id=clients.l_get_client_by_id(client_id)['client_user_ref']
+    user_record=users.l_get_user_by_id(user_id)
+    current_user = user_record['admin_user']
+    current_timestamp = functions.make_timestamp()
+    current_table_name = 'cases'
+    current_table_id = client_id
+    current_payload = str(l_select_case_by_id(shdw_case_id))
+    # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+    previous_log_entry = add_log_entry(current_user,
+                                       current_timestamp,
+                                       current_table_name,
+                                       current_table_id,
+                                       current_payload)
+    # print(previous_log_entry)
+
+    cursor.execute("""  UPDATE 
+                               EasyEL.dbo.cases 
+                           SET 
+                               shadow_case_id=?
+                           WHERE 
+                           case_id= ?""",
+                   (shdw_case_id, case_id))
+    cursor.commit()
+
 
 #l_update_cases_shadow_case_id(110,170)
 
