@@ -300,7 +300,6 @@ def l_add_user  (u_anvil_usr,
     cursor.commit()
     cursor.execute("SELECT @@IDENTITY AS ID;")
     last_id = int(cursor.fetchone()[0])
-    addresses_users.add_address(usr_last_name,usr_first_name,e_mail,last_id)
     return last_id
 
 #print(l_add_user("[344817,524933171]","Schumacher","Martin","ms@gmail.com"))
