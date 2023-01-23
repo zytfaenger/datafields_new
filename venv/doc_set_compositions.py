@@ -73,8 +73,8 @@ def l_select_dsc_by_dsd(dsd):
     return results
 
 #print("dsc 130:", l_select_dsc_by_dsd(120))
-print('dsd = 130')
-[print(d) for d in l_select_dsc_by_dsd(130)]
+# print('dsd = 130')
+# [print(d) for d in l_select_dsc_by_dsd(130)]
 #'
 #[print(d['dsc_sequence'],d['anvil_component_ref']) for d in l_select_dsc_by_dsd('130')]
 
@@ -210,8 +210,11 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
                 print(msg)
             return None
     else:
-        return result[0]
+        return result[1]
             #print(results[0]
+
+print(l_select_dsc_id_by_case_and_field(400,510))
+
 
 #print(l_select_dsc_id_by_case_and_field(400,110)) # textfeld in formular o.k.
 # print(l_select_dsc_id_by_case_and_field(120,160)) # textfeld in formular in shadow nicht enthalten
