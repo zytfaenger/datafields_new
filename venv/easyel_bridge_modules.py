@@ -142,6 +142,14 @@ def get_fields_table_columns():
 def l_get_active_fields_for_dd(filter="%"):
     return fields_functions.l_get_active_fields_for_dd(filter)
 
+@anvil.server.callable
+def get_anvil_field_list_for_dsd_id_in_sequence(dsd_id):
+    return doc_set_compositions.l_get_anvil_field_list_for_dsd_id_in_sequence(dsd_id)
+
+@anvil.server.callable
+def get_anvil_field_list_for_dsd_id_in_sequence(dsd_id):
+    return doc_set_compositions.l_get_anvil_field_list_for_dsd_id(dsd_id)
+
 
 @anvil.server.callable
 def select_field_by_id(f_id):
@@ -254,6 +262,10 @@ def get_active_dsc():
 @anvil.server.callable
 def get_all_dsc():
     return doc_set_compositions.l_get_all_dsc()
+
+@anvil.server.callable
+def get_dsd_reference_for_case_id(ca_id):
+    return cases_functions.l_get_dsd_reference_for_case_id(ca_id)
 
 
 @anvil.server.callable

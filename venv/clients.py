@@ -139,7 +139,7 @@ def l_get_all_clients_of_a_user_id(user_id): #a user can have many clients
                     WHERE 
                         client_user_ref=?
                     order by 
-                        client_is_user DESC """, user_id)
+                        client_is_user""", user_id)
 
     columns = [column[0] for column in cursor.description]
     # print(columns)

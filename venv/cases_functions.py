@@ -129,9 +129,9 @@ def l_get_cases_for_a_client_id(client_id):
         for row in results:
             res.append(dict(zip(columns, row)))
         return res
-a=l_get_cases_for_a_client_id(210)
-for i in range(0,len(a)):
-    print(a[i])
+# a=l_get_cases_for_a_client_id(210)
+# for i in range(0,len(a)):
+#     print(a[i])
 
 
 def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
@@ -337,7 +337,7 @@ def l_get_dsd_reference_for_case_id(ca_id):
     # print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
         return dsd
 
-#print(l_get_dsd_reference_for_case_id(100))
+print(l_get_dsd_reference_for_case_id(100))
 
 def l_get_user_id_for_case_id(ca_id):
     query="""

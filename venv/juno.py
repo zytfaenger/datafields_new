@@ -1,5 +1,6 @@
 import cases_functions
 import client_data_main
+import client_uuid
 import clients
 import doc_set_compositions
 import doc_set_definition
@@ -220,3 +221,6 @@ def l_add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
 #print(l_get_client_list('[344816,524933170]'))
 
 #print(l_ensure_user_context('[344816,581704467]','fs@msfp.ch',"Address","unique",9999))
+
+def get_my_links(client_id):
+    pass

@@ -10,9 +10,20 @@ conn = get_connection()
 
 cursor = conn.cursor()
 def l_get_active_dsc():
-    query: str = "SELECT dsc_id, dsd_reference, field_id_reference, dsc_sequence, admin_user, admin_timestamp, admin_previous_entry, admin_active " \
-                 "from dbo.doc_set_comp where admin_active=1 " \
-                 "order by dsc_id,dsc_sequence"
+    query: str = """SELECT dsc_id,
+                     dsd_reference,
+                     field_id_reference, 
+                     dsc_sequence, 
+                     admin_user, 
+                     admin_timestamp, 
+                     admin_previous_entry, 
+                     admin_active 
+                 from 
+                   dbo.doc_set_comp 
+                 where 
+                     admin_active=1 
+                  order by 
+                    dsd_reference,dsc_sequence"""
     cursor.execute(query)
     columns = [column[0] for column in cursor.description]
     # print(columns)
@@ -20,6 +31,8 @@ def l_get_active_dsc():
     for row in cursor.fetchall():
         results.append(dict(zip(columns, row)))
     return results
+
+#[print(d) for d in l_get_active_dsc()]
 
 def l_get_all_dsc():
     query: str = "select dsc_id, dsd_reference, field_id_reference, dsc_sequence, admin_user, admin_timestamp, admin_previous_entry, admin_active  from dbo.doc_set_comp order by dsc_id,dsc_sequence"
@@ -34,17 +47,23 @@ def l_get_all_dsc():
 
 def l_select_dsc_by_dsd(dsd):
     cursor.execute("""select 
-                            dsc_id, dsd_reference, 
-                            field_id_reference, 
-                            dsc_sequence, 
-                            admin_user, 
-                            admin_timestamp, 
-                            admin_previous_entry, 
-                            admin_active 
+                            EasyEL.dbo.doc_set_comp.dsc_id, 
+                            EasyEL.dbo.doc_set_comp.dsd_reference, 
+                            EasyEL.dbo.doc_set_comp.field_id_reference, 
+                            EasyEL.dbo.fields.anvil_component_ref,
+                            EasyEL.dbo.doc_set_comp.dsc_sequence, 
+                            EasyEL.dbo.doc_set_comp.admin_user, 
+                            EasyEL.dbo.doc_set_comp.admin_timestamp, 
+                            EasyEL.dbo.doc_set_comp.admin_previous_entry, 
+                            EasyEL.dbo.doc_set_comp.admin_active 
                         from 
-                            dbo.doc_set_comp 
+                            EasyEL.dbo.doc_set_comp
+                        JOIN dbo.fields on dbo.fields.field_id = dbo.doc_set_comp.field_id_reference
                         where 
-                            dsd_reference=?"""
+                            dsd_reference=?
+                        
+                        order by
+                            dsc_sequence"""
                         , dsd)
     columns = [column[0] for column in cursor.description]
     # print(columns)
@@ -53,42 +72,34 @@ def l_select_dsc_by_dsd(dsd):
         results.append(dict(zip(columns, row)))
     return results
 
-#print("dsc 120:", l_select_dsc_by_dsd(120))
+#print("dsc 130:", l_select_dsc_by_dsd(120))
+print('dsd = 130')
+[print(d) for d in l_select_dsc_by_dsd(130)]
+#'
+#[print(d['dsc_sequence'],d['anvil_component_ref']) for d in l_select_dsc_by_dsd('130')]
 
-#  ---> probably rubbish not used!!
-# def l_select_dsc_to_store_for_dsd(case_dsd, case_language):
-#     query="""
-#     SELECT
-#         doc_set_comp.dsc_sequence,
-#         doc_set_comp.dsc_id,
-#         doc_set_def.dsd_name,
-#         fields.field_id,
-#         fields.field_name,
-#         dbo.languages.lang_short,
-#         dbo.field_types.ft_stores_state,
-#         dbo.field_types.ft_stores_data
-#     FROM
-#         dbo.doc_set_comp
-#             INNER JOIN dbo.doc_set_def ON dbo.doc_set_comp.dsd_reference = dbo.doc_set_def.dsd_id
-#             INNER JOIN dbo.fields ON dbo.doc_set_comp.field_id_reference = dbo.fields.field_id
-#             INNER JOIN dbo.field_types ON dbo.fields.field_typ_id = dbo.field_types.ft_id
-#             INNER JOIN dbo.field_descriptions ON dbo.fields.field_id = dbo.field_descriptions.field_id_reference
-#             INNER JOIN dbo.languages ON dbo.field_descriptions.language_id_reference = dbo.languages.lang_id
-#     WHERE
-#     (dsd_id = ?) AND (languages.lang_short = ?) AND (field_types.ft_shadow_store=?)
-#     ORDER BY
-#     dbo.doc_set_comp.dsc_sequence """
-#     cursor.execute(query,(case_dsd,case_language,True))
-#     columns = [column[0] for column in cursor.description]
-#     # print(columns)
-#     qres=cursor.fetchall()
-#     results = []
-#     for row in qres:
-#         results.append(dict(zip(columns, row)))
-#     #print(results)
-#     return results
-#
-# # print(l_select_dsc_to_store_for_dsd(120, 'D-CH'))
+def l_get_anvil_field_list_for_dsd_id(dsd_id):
+    acl = {}
+    for d in l_select_dsc_by_dsd(dsd_id):
+        acl[d['anvil_component_ref']]=True
+    acl.keys()
+    fskeys=list(acl.keys())
+    return fskeys
+
+# print(l_get_anvil_field_list_for_dsd_id(130))
+# for a in l_get_anvil_field_list_for_dsd_id(130):
+#     print(a)
+def l_get_anvil_field_list_for_dsd_id_in_sequence(dsd_id):
+    acl_ranked =[] #Anvil component list ranked
+    acl = {}
+    [acl_ranked.append((d['dsc_sequence'],d['anvil_component_ref'])) for d in l_select_dsc_by_dsd(dsd_id)]
+    return acl_ranked
+
+# a=l_get_anvil_field_list_for_dsd_id_in_sequence(130)
+# for c in a:
+#     print(c)
+
+
 
 def l_select_dsc_to_store_for_case_id(case_id):
     dsf_for_case=doc_set_definition.l_select_dsd_by_case(case_id)
@@ -119,7 +130,7 @@ def l_select_dsc_to_store_for_case_id(case_id):
     #print(results)
     return results
 
-#print(l_select_dsc_to_store_for_case_id(180))
+# print(l_select_dsc_to_store_for_case_id(400))
 
 
 
@@ -171,11 +182,12 @@ def l_select_dsc_by_id(id):
 
 def l_select_dsc_id_by_case_and_field(case_id,field_id):
     cursor.execute("""select 
-                        doc_set_comp.dsc_id
+                        EasyEL.dbo.cases.case_id,
+                        EasyEL.dbo.doc_set_comp.dsc_id
                        from 
-                        dbo.doc_set_comp
-                            inner join doc_set_def on  doc_set_comp.dsd_reference = doc_set_def.dsd_id
-                            inner join EasyEL.dbo.cases on cases.dsd_reference=doc_set_def.dsd_id
+                        EasyEL.dbo.cases
+                        join EasyEL.dbo.doc_set_def on EasyEL.dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
+                        join EasyEL.dbo.doc_set_comp on doc_set_comp.dsd_reference = EasyEL.dbo.doc_set_def.dsd_id                                                                
                         where 
                         (cases.case_id=?) AND (field_id_reference = ?)""",
                         (case_id,field_id))
@@ -201,7 +213,7 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
         return result[0]
             #print(results[0]
 
-# print(l_select_dsc_id_by_case_and_field(110,160)) # textfeld in formular o.k.
+#print(l_select_dsc_id_by_case_and_field(400,110)) # textfeld in formular o.k.
 # print(l_select_dsc_id_by_case_and_field(120,160)) # textfeld in formular in shadow nicht enthalten
 # print(l_select_dsc_id_by_case_and_field(110,999)) # textfeld in formular nicht enhalten -> sollte nicht sein
 
