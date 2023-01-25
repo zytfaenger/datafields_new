@@ -1,182 +1,13 @@
-from functions import make_timestamp, get_user
-from log_functions import log_add_log_entry
-from connections import get_connection
-
-conn = get_connection()
-
-cursor = conn.cursor()
+import functions
+import log_functions
+import connections
 
 
 def l_get_fields_table_columns():
-    query: str = """SELECT 
-                        field_id, 
-                        field_typ_id, 
-                        field_name, 
-                        field_description, 
-                        field_sequence, 
-                        field_group, 
-                        field_group_order, 
-                        field_sub_group, 
-                        field_sub_group_value, 
-                        admin_user, 
-                        admin_previous_entry, 
-                        admin_active, 
-                        admin_timestamp
-                    FROM 
-                        fields 
-                    WHERE 
-                        field_id=? 
-                    ORDER BY field_sequence"""
-
-    cursor.execute(query,"")
-    i=0
-    cset=[]
-    for c in cursor.description:
-        #print(c)
-        type=""
-        if c[1]==int:
-            type="number"
-        elif c[1]==float:
-            type="number"
-        elif c[1] == bool:
-            type="number"
-        elif c[1]==str:
-            type="text"
-        else:
-            type=c[1]
-        temp=(i,c[0],type)
-        cset.append(temp)
-        i= i+1
-    return cset
-# print(l_get_fields_table_columns())
-
-def l_get_active_fields():
-    query: str = """SELECT 
-                        field_id, 
-                        field_typ_id, 
-                        field_name, 
-                        field_description, 
-                        field_sequence, 
-                        field_group, 
-                        field_group_order, 
-                        field_sub_group, 
-                        field_sub_group_value, 
-                        admin_user, 
-                        admin_previous_entry, 
-                        admin_active, 
-                        admin_timestamp
-                    FROM 
-                        fields 
-                    WHERE 
-                        admin_active=?
-                    ORDER BY field_sequence"""
-    cursor.execute(query,1)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-
-#print(l_get_active_fields())
-
-
-def l_get_active_fields_for_shadow_dsd():
-    active=True
-    shd_store=True
-    query: str = """SELECT 
-                        field_id, 
-                        field_sequence,
-                        field_typ_id,
-                        field_types.ft_shadow_store
-                    FROM 
-                        fields
-                        inner join field_types on fields.field_typ_id = field_types.ft_id
-                    WHERE 
-                        fields.admin_active=? and field_types.ft_shadow_store=?
-                    ORDER BY field_sequence"""
-    cursor.execute(query,(active,shd_store))
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-
-# print(l_get_active_fields_for_shadow_dsd())
-
-
-def l_get_active_fields_for_dd(filter="%"):
-    query: str = """SELECT 
-                        field_name,
-                        field_id
-                    FROM 
-                        fields 
-                    WHERE 
-                        admin_active=? and field_name like ?
-                    ORDER BY field_sequence"""
-
-    cursor.execute(query,1,filter)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-
-# print(l_get_active_fields_for_dd(filter="%La%"))
-
-def l_get_field_id_by_field_name(field_name):
-    query: str = """SELECT 
-                        field_id
-                    FROM 
-                        fields 
-                    WHERE 
-                        admin_active=? and field_name like ?
-                    ORDER BY field_sequence"""
-
-    cursor.execute(query,1,filter)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-
-# print(l_get_active_fields_for_dd(filter="%La%"))
-
-
-
-
-def l_get_all_fields():
-    query: str = """SELECT 
-                        field_id, 
-                        field_typ_id, 
-                        field_name, 
-                        field_description, 
-                        field_sequence, 
-                        field_group, 
-                        field_group_order, 
-                        field_sub_group, 
-                        field_sub_group_value, 
-                        admin_user, 
-                        admin_previous_entry, 
-                        admin_active, 
-                        admin_timestamp
-                    FROM 
-                        fields 
-                    ORDER BY field_sequence"""
-    cursor.execute(query)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(zip(columns, row)))
-    return results
-# print(l_get_all_fields())
-
-def l_select_field_by_id(f_id):
-    cursor.execute("""select 
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
                             field_id, 
                             field_typ_id, 
                             field_name, 
@@ -190,57 +21,249 @@ def l_select_field_by_id(f_id):
                             admin_previous_entry, 
                             admin_active, 
                             admin_timestamp
-                        from 
+                        FROM 
+                            fields 
+                        WHERE 
+                            field_id=? 
+                        ORDER BY field_sequence"""
+
+        cursor.execute(query,"")
+        i=0
+        cset=[]
+        for c in cursor.description:
+            #print(c)
+            type=""
+            if c[1]==int:
+                type="number"
+            elif c[1]==float:
+                type="number"
+            elif c[1] == bool:
+                type="number"
+            elif c[1]==str:
+                type="text"
+            else:
+                type=c[1]
+            temp=(i,c[0],type)
+            cset.append(temp)
+            i= i+1
+        return cset
+# print(l_get_fields_table_columns())
+
+def l_get_active_fields():
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            field_id, 
+                            field_typ_id, 
+                            field_name, 
+                            field_description, 
+                            field_sequence, 
+                            field_group, 
+                            field_group_order, 
+                            field_sub_group, 
+                            field_sub_group_value, 
+                            admin_user, 
+                            admin_previous_entry, 
+                            admin_active, 
+                            admin_timestamp
+                        FROM 
+                            fields 
+                        WHERE 
+                            admin_active=?
+                        ORDER BY field_sequence"""
+        cursor.execute(query,1)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+#print(l_get_active_fields())
+
+
+def l_get_active_fields_for_shadow_dsd():
+    active=True
+    shd_store=True
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            field_id, 
+                            field_sequence,
+                            field_typ_id,
+                            field_types.ft_shadow_store
+                        FROM 
                             fields
-                        where field_id=?""", f_id)
-    columns = [column[0] for column in cursor.description]
-    # print(columns)
-    results = cursor.fetchone()
-    if results is None:
-        return None
-    else:
-        res=[]
-        res.append(dict(zip(columns, results)))
-        # print(results[0])
-        return res[0]
+                            inner join field_types on fields.field_typ_id = field_types.ft_id
+                        WHERE 
+                            fields.admin_active=? and field_types.ft_shadow_store=?
+                        ORDER BY field_sequence"""
+        cursor.execute(query,(active,shd_store))
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+# print(l_get_active_fields_for_shadow_dsd())
+
+
+def l_get_active_fields_for_dd(filter="%"):
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            field_name,
+                            field_id
+                        FROM 
+                            fields 
+                        WHERE 
+                            admin_active=? and field_name like ?
+                        ORDER BY field_sequence"""
+
+        cursor.execute(query,1,filter)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+# print(l_get_active_fields_for_dd(filter="%La%"))
+
+def l_get_field_id_by_field_name(field_name):
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            field_id
+                        FROM 
+                            fields 
+                        WHERE 
+                            admin_active=? and field_name like ?
+                        ORDER BY field_sequence"""
+
+        cursor.execute(query,1,filter)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+# print(l_get_active_fields_for_dd(filter="%La%"))
+
+
+
+
+def l_get_all_fields():
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            field_id, 
+                            field_typ_id, 
+                            field_name, 
+                            field_description, 
+                            field_sequence, 
+                            field_group, 
+                            field_group_order, 
+                            field_sub_group, 
+                            field_sub_group_value, 
+                            admin_user, 
+                            admin_previous_entry, 
+                            admin_active, 
+                            admin_timestamp
+                        FROM 
+                            fields 
+                        ORDER BY field_sequence"""
+        cursor.execute(query)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+# print(l_get_all_fields())
+
+def l_select_field_by_id(f_id):
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        cursor.execute("""select 
+                                field_id, 
+                                field_typ_id, 
+                                field_name, 
+                                field_description, 
+                                field_sequence, 
+                                field_group, 
+                                field_group_order, 
+                                field_sub_group, 
+                                field_sub_group_value, 
+                                admin_user, 
+                                admin_previous_entry, 
+                                admin_active, 
+                                admin_timestamp
+                            from 
+                                fields
+                            where field_id=?""", f_id)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchone()
+        if results is None:
+            return None
+        else:
+            res=[]
+            res.append(dict(zip(columns, results)))
+            # print(results[0])
+            return res[0]
 
 
 #print(l_select_field_by_id(160)['field_typ_id'])
 
 
 def l_get_field_sub_group_value_for_id(f_id):
-    query = """
-        select  
-            field_sub_group_value
-        from
-         fields
-        where
-         field_id=?   
-    """
-    cursor.execute(query, f_id)
-    result = cursor.fetchone()
-    for r in result:
-        sub_group_value = r
-        print('l_get_field_sub_group_value_for_id', sub_group_value)
-        return sub_group_value
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query = """
+            select  
+                field_sub_group_value
+            from
+             fields
+            where
+             field_id=?   
+        """
+        cursor.execute(query, f_id)
+        result = cursor.fetchone()
+        for r in result:
+            sub_group_value = r
+            print('l_get_field_sub_group_value_for_id', sub_group_value)
+            return sub_group_value
 
 # print(l_get_field_sub_group_value_for_id(230))
 def l_get_field_sub_group_for_id(f_id):
-    query = """
-        select  
-            field_sub_group
-        from
-         fields
-        where
-         field_id=?   
-    """
-    cursor.execute(query, f_id)
-    result = cursor.fetchone()
-    sub_group = ""
-    for r in result:
-        sub_group = r
-    # print('l_get_field_sub_group_for_id', sub_group)
-    return sub_group
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query = """
+            select  
+                field_sub_group
+            from
+             fields
+            where
+             field_id=?   
+        """
+        cursor.execute(query, f_id)
+        result = cursor.fetchone()
+        sub_group = ""
+        for r in result:
+            sub_group = r
+        # print('l_get_field_sub_group_for_id', sub_group)
+        return sub_group
 
 
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
@@ -255,43 +278,46 @@ def l_add_field(fd_typ_id,
                 ft_group_order=1,
                 ft_subgroup=None,
                 ft_sub_group_value=None):
-    admin_user = get_user()
-    timestamp = make_timestamp()
-    query = """insert into 
-                     fields (
-                     field_typ_id,
-                     field_name,
-                     field_description,
-                     field_sequence,
-                     field_group,
-                     field_group_order,
-                     field_sub_group,
-                     field_sub_group_value,
-                     admin_user,
-                     admin_previous_entry,
-                     admin_active,
-                     admin_timestamp)
-                     values (?,?,?,?,?,?,?,?,?,?,?,?)"""
-    cursor.execute(query,
-                   (fd_typ_id,
-                    fd_name,
-                    fd_description,
-                    fd_sequence,
-                    ft_field_group,
-                    ft_group_order,
-                    ft_subgroup,
-                    ft_sub_group_value,
-                    admin_user,
-                    0,
-                    1,
-                    timestamp))
-    cursor.commit()
-    cursor.execute("SELECT @@IDENTITY AS ID;")
-    last_id = int(cursor.fetchone()[0])
-    return last_id
+    admin_user = functions.get_user()
+    timestamp = functions.make_timestamp()
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query = """insert into 
+                         fields (
+                         field_typ_id,
+                         field_name,
+                         field_description,
+                         field_sequence,
+                         field_group,
+                         field_group_order,
+                         field_sub_group,
+                         field_sub_group_value,
+                         admin_user,
+                         admin_previous_entry,
+                         admin_active,
+                         admin_timestamp)
+                         values (?,?,?,?,?,?,?,?,?,?,?,?)"""
+        cursor.execute(query,
+                       (fd_typ_id,
+                        fd_name,
+                        fd_description,
+                        fd_sequence,
+                        ft_field_group,
+                        ft_group_order,
+                        ft_subgroup,
+                        ft_sub_group_value,
+                        admin_user,
+                        0,
+                        1,
+                        timestamp))
+        cursor.commit()
+        cursor.execute("SELECT @@IDENTITY AS ID;")
+        last_id = int(cursor.fetchone()[0])
+        return last_id
 
 
-# l_add_field(100,"test","das ist ein Testfeld",2)
+l_add_field(100,"test","das ist ein Testfeld",2)
 
 
 def l_update_field(id_to_change,

@@ -1,4 +1,5 @@
 import anvil.server
+import anvil.tables
 import PLZ
 import cases_functions
 import client_data_main
@@ -13,9 +14,6 @@ import juno
 import language_functions
 import log_functions
 import users
-from connections import get_connection
-
-conn = get_connection()
 
 
 # anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules PDS v1
@@ -156,6 +154,7 @@ def select_field_by_id(f_id):
     return fields_functions.l_select_field_by_id(f_id)
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def get_field_sub_group_value_for_id(f_id):
     return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 # print(l_get_field_sub_group_value_for_id(230))
@@ -264,6 +263,7 @@ def get_all_dsc():
     return doc_set_compositions.l_get_all_dsc()
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def get_dsd_reference_for_case_id(ca_id):
     return cases_functions.l_get_dsd_reference_for_case_id(ca_id)
 
@@ -320,10 +320,12 @@ def change_status_dsc_by_id(id_to_change: int, new_status: int):
 
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def set_fd_direct(user_id, case_id, field_id, pl_text, pl_number, pl_boolean):
     client_data_main.l_set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean):
     user_id=users.l_get_userid_for_anvil_user(anvil_user_id_txt)
     print("set_fd: folgender User ist gesetzt:", anvil_user_id_txt,"-->",user_id)
@@ -331,10 +333,12 @@ def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def get_fd(case_id, field_id):  # in Client_data_main
     return client_data_main.l_get_fd(case_id, field_id)
 
 @anvil.server.callable
+@anvil.tables.in_transaction()
 def get_fd_shadow(case_id, field_id):  # in Client_data_main
     return client_data_main.l_get_fd_shadow(case_id, field_id)
 
@@ -430,7 +434,6 @@ def get_client_by_id(client_id):
 @anvil.server.callable()
 def ensure_doc(case_id, field_id):
     return docs_functions.l_ensure_doc(case_id, field_id)
-
 
 
 @anvil.server.callable()

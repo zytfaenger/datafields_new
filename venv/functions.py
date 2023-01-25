@@ -1,8 +1,7 @@
 import os
 import re
 
-def multiplyfs(x:float,y:float):
-    return(x*y)
+
 import uuid
 import time
 import datetime
@@ -11,6 +10,10 @@ import secrets
 import string
 import cryptography
 from  cryptography.fernet import Fernet
+
+
+def multiplyfs(x:float,y:float):
+    return(x*y)
 
 def generate_key():
     return Fernet.generate_key()

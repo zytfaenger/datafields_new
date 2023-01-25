@@ -1,6 +1,5 @@
 import cases_functions
 import client_data_main
-import client_uuid
 import clients
 import doc_set_compositions
 import doc_set_definition
