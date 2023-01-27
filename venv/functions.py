@@ -33,19 +33,21 @@ def regenerate_password():
     os.chdir('/Users/fschumacher/PycharmProjects/datafields/venv/keys')
     try:
         restored_key = load_key("fssecret.key")
+        f = Fernet(restored_key)
     except Exception as e:
         print(e, "-->check file fsssecret.key")
 
-    f = Fernet(restored_key)
+
 
     try:
         encrypted_pw = load_key("azure.key")
+        password = f.decrypt(encrypted_pw)
+        os.chdir(currdir)
+        return password.decode()
     except Exception as e:
         print(e, "-->check file azure.key")
 
-    password = f.decrypt(encrypted_pw)
-    os.chdir(currdir)
-    return password.decode()
+
 
 def make_timestamp():
     #Returns current gmttime as Integer

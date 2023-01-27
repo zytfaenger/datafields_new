@@ -317,7 +317,7 @@ def l_add_field(fd_typ_id,
         return last_id
 
 
-l_add_field(100,"test","das ist ein Testfeld",2)
+#l_add_field(100,"test","das ist ein Testfeld",2)
 
 
 def l_update_field(id_to_change,

@@ -267,7 +267,7 @@ def l_add_doc(cs_id,
         last_id = int(cursor.fetchone()[0])
         return last_id
 
-l_add_doc(100,530,"Ehevertrag",'2022-12-20')
+#l_add_doc(100,530,"Ehevertrag",'2022-12-20')
 
 def l_update_doc_by_id(id_to_change,
               ccs_id,

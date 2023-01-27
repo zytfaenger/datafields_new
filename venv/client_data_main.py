@@ -2,15 +2,10 @@ import cases_functions
 import doc_set_compositions
 import functions
 import users
-from functions import make_timestamp, get_user, get_user_id
 import log_functions
 import connections
-from doc_set_definition import l_select_dsd_by_case, l_select_dsd_by_id
-from cases_functions import l_get_dsd_reference_for_case_id,l_select_language_short_by_case_id, l_get_user_id_for_case_id
-from field_descriptions import l_get_label, l_get_prompt
-# conn = get_connection()
-#
-# cursor = conn.cursor()
+import field_descriptions
+import globals
 
 
 def l_get_all_active_cdm_entries():
@@ -257,7 +252,7 @@ def l_select_cdm_by_id(id):
             #print(results[0])
         return results[0]
 
-print(l_select_cdm_by_id(1050))
+#print(l_select_cdm_by_id(1050))
 
 def add_log_entry(user, current_timestamp, table_name,table_id, payload):
     return log_functions.log_add_log_entry(user, current_timestamp, table_name,table_id, payload)
@@ -330,27 +325,27 @@ def l_update_cdm_entry(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
     l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean)
 
 
-def l_change_status_cdm_by_id(id_to_change:int,new_status:int):
-    azure = connections.Azure()
-    with azure:
-        cursor = azure.conn.cursor()
-        current_user=functions.get_user()    #change
-        #print(current_user)
-        current_timestamp = functions.make_timestamp()
-        current_table_name = 'doc_set_def'
-        current_table_id=id_to_change
-        current_payload=str(l_select_dsd_by_id(id_to_change))
-        #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
-        previous_log_entry=add_log_entry(current_user,
-                                         current_timestamp,
-                                         current_table_name,
-                                         current_table_id,
-                                         current_payload)
-        #print(previous_log_entry)
-
-
-        cursor.execute("UPDATE doc_set_def SET admin_user=?,admin_timestamp=?,admin_previous_entry=?,admin_active=? WHERE dsd_id=?",(current_user,current_timestamp,previous_log_entry,new_status,id_to_change))
-        cursor.commit()
+# def l_change_status_cdm_by_id(id_to_change:int,new_status:int):
+#     azure = connections.Azure()
+#     with azure:
+#         cursor = azure.conn.cursor()
+#         current_user=functions.get_user()    #change
+#         #print(current_user)
+#         current_timestamp = functions.make_timestamp()
+#         current_table_name = 'client_data_main'
+#         current_table_id=id_to_change
+#         current_payload=str(l_select_cdm_by_id(id_to_change))
+#         #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+#         previous_log_entry=add_log_entry(current_user,
+#                                          current_timestamp,
+#                                          current_table_name,
+#                                          current_table_id,
+#                                          current_payload)
+#         #print(previous_log_entry)
+#
+#
+#         cursor.execute("""UPDATE doc_set_def SET admin_user=?,admin_timestamp=?,admin_previous_entry=?,admin_active=? WHERE dsd_id=?""",(current_user,current_timestamp,previous_log_entry,new_status,id_to_change))
+#         cursor.commit()
 
 def l_ensure_completeness_of_store_for_case(case_id):
     azure = connections.Azure()
@@ -385,9 +380,9 @@ def l_ensure_completeness_of_store_for_case(case_id):
 
 def l_get_fd_shadow(case_id, field_id):
     print("l_get_shadow, parameters:",case_id, field_id)
-    current_lang=l_select_language_short_by_case_id(case_id)
+    current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
     current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    current_userID=l_get_user_id_for_case_id(case_id)
+    current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
     print("zwischenstand l_get_fd: ", case_id, field_id,current_lang, current_dsc, current_userID)
     azure = connections.Azure()
     with azure:
@@ -422,7 +417,7 @@ def l_get_fd_shadow(case_id, field_id):
         result['payload_number']=payload[1]
         result['payload_boolean'] = payload[2]
         print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-        print(l_get_label(current_lang, field_id))
+        print(field_descriptions.l_get_label(current_lang, field_id))
         # result['label']=l_get_label(current_lang,field_id)  # not necessary, because no labels are created in shadow
         # result['prompt']=l_get_prompt(current_lang,field_id) # not necessary, because no labels are created in shadow
         print(result)
@@ -434,12 +429,12 @@ def l_get_fd_shadow(case_id, field_id):
 
 def l_get_fd(case_id, field_id):
     print("l_get_fd, parameters:",case_id, field_id)
-    current_lang=l_select_language_short_by_case_id(case_id)
+    current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
     current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
     if current_dsc==None:  ##DSC nicht eröffnet, abort
         text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
     else:
-        current_userID=l_get_user_id_for_case_id(case_id)
+        current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
         shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
         if shadow_case_id==0: #make sure it is really a shadow case direct
             if cases_functions.l_get_shadow_case_indicator_for_case_id(case_id) is True:
@@ -491,15 +486,91 @@ def l_get_fd(case_id, field_id):
             result['payload_number'] = payload[1]
             result['payload_boolean'] = payload[2]
             print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-            print(l_get_label(current_lang, field_id))
-            result['label']=l_get_label(current_lang,field_id)
-            result['prompt']=l_get_prompt(current_lang,field_id)
+            print(field_descriptions.l_get_label(current_lang, field_id))
+            result['label']=field_descriptions.l_get_label(current_lang,field_id)
+            result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
             #  print(result)
             return result
 
 #print(l_get_fd(case_id=400,field_id=510))
 
 # print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
+
+def l_get_fd_cached(case_id, field_id):
+    print("l_get_fd, parameters:",case_id, field_id)
+    current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
+    current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+    if current_dsc==None:  ##DSC nicht eröffnet, abort
+        text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
+    else:
+        current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
+        shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
+        if shadow_case_id==0: #make sure it is really a shadow case direct
+            if cases_functions.l_get_shadow_case_indicator_for_case_id(case_id) is True:
+                shadow_case_id=case_id
+                print('get_fd:',case_id," is Shadow Case!")
+            else:
+                print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+        azure = connections.Azure()
+        with azure:
+            cursor = azure.conn.cursor()
+            result= {}
+            query= """select 
+                        payload_text,
+                        payload_number,
+                        payload_boolean
+                      from 
+                        client_data_main
+                      where
+                        dsc_reference=? and case_id_reference=?
+                    """
+            cursor.execute(query,(current_dsc,case_id))
+            payload= cursor.fetchone()
+            # print("Payload", payload)
+
+            print('get_fd payload',payload)
+            if payload is None:
+                print("No record found in current data")
+                result = l_get_fd_shadow(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
+                                                            # the shadow ensures that there is at least an empty record
+                                                            # now use the copy of the results either filled or new
+
+                new_record = l_add_cdm_entry(current_userID,
+                                case_id,
+                                current_dsc,
+                                pl_text=result['payload_text'],
+                                pl_number=result['payload_number'],
+                                pl_boolean=result['payload_boolean'])
+
+                azure2=connections.Azure()
+                with azure2:
+                    cursor2 = azure2.conn.cursor()
+                    cursor2.execute(query,(current_dsc,case_id))
+                    payload=cursor2.fetchone()
+                    print('New payload:',payload)
+
+            print(payload)
+            result['payload_text']=payload[0]
+            result['payload_number'] = payload[1]
+            result['payload_boolean'] = payload[2]
+            print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
+            print(field_descriptions.l_get_label(current_lang, field_id))
+            result['label']=field_descriptions.l_get_label(current_lang,field_id)
+            result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
+            #  print(result)
+            return result
+
+#print(l_get_fd(case_id=400,field_id=510))
+
+# print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
+
+
+
+
+
+
+
 
 def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
     if pl_text=='=':
@@ -552,8 +623,8 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
             #update normal  Record should exist -:)
             print("set_fd: dsc_id", dsc_id)
             id_to_change=l_get_cdm_entry_ID(case_id, dsc_id)
-            current_admin_user=get_user()
-            current_timestamp = make_timestamp()
+            current_admin_user=functions.get_user()
+            current_timestamp = functions.make_timestamp()
             current_table_name = 'client_data_main'
             current_table_id=id_to_change
             current_payload=str(l_select_cdm_by_id(id_to_change))
@@ -590,8 +661,8 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                 # shadow Record does not necessarily exist!
                 print("set fd: shadow_dsc_id", shadow_dsc_id)
                 id_to_change=l_get_cdm_entry_ID(shadow_case_id, shadow_dsc_id)
-                current_admin_user=get_user()
-                current_timestamp = make_timestamp()
+                current_admin_user=functions.get_user()
+                current_timestamp = functions.make_timestamp()
                 current_table_name = 'shadow_client_data_main'
                 current_table_id=id_to_change
                 if id_to_change is None:

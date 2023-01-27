@@ -14,11 +14,14 @@ import juno
 import language_functions
 import log_functions
 import users
-
+import cache
+import globals as G
 
 # anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules PDS v1
 anvil.server.connect('server_ORIZJ3HLOBXXSFAX5HN3IE5Z-WCKU3CRQDF4JNFDC')  #modules PDS v2
 # anvil.server.connect('server_UTEZBTAL4U6QJVKILS4ISDYP-F6JMSXNZ36WYEYKQ')  #admin
+
+#print(G.cached.info_get(230))
 
 # -------- Logging----------#
 
@@ -335,8 +338,12 @@ def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 @anvil.server.callable
 @anvil.tables.in_transaction()
 def get_fd(case_id, field_id):  # in Client_data_main
-    return client_data_main.l_get_fd(case_id, field_id)
-
+    res=G.cached.get_fd_cached(180,case_id,field_id)
+    if res is None:
+        return client_data_main.l_get_fd(case_id, field_id)
+    else:
+        print('cached')
+        return res
 @anvil.server.callable
 @anvil.tables.in_transaction()
 def get_fd_shadow(case_id, field_id):  # in Client_data_main
