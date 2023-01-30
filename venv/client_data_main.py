@@ -5,7 +5,8 @@ import users
 import log_functions
 import connections
 import field_descriptions
-import globals
+import globals as G
+import cache
 
 
 def l_get_all_active_cdm_entries():
@@ -378,13 +379,16 @@ def l_ensure_completeness_of_store_for_case(case_id):
 
 # +l_ensure_completeness_of_store_for_case(190)
 
-def l_get_fd_shadow(case_id, field_id):
+def l_get_fd_shadow(anvil_user_id, case_id, field_id):
     print("l_get_shadow, parameters:",case_id, field_id)
-    current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
-    current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
+    # current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
+    #current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+    #current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
+    current_lang= G.cached.get_language_id(anvil_user_id)
+    current_dsc = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id,case_id, field_id)
+    current_userID=cases_functions.l_get_user_id_for_case_id_modern(anvil_user_id, case_id)
     print("zwischenstand l_get_fd: ", case_id, field_id,current_lang, current_dsc, current_userID)
-    azure = connections.Azure()
+    azure = G.cached.conn_get()
     with azure:
         cursor = azure.conn.cursor()
         result= {}
@@ -405,7 +409,7 @@ def l_get_fd_shadow(case_id, field_id):
             print("No shadow record found")
             l_add_cdm_entry(current_userID, case_id, current_dsc, 'None',99999,False)
             print('get_fd_shadow: missing cdm shadow record added!')
-            azure2 = connections.Azure()
+            azure2 = G.cached.conn_get()
             with azure2:
                 cursor2=azure2.conn.cursor()
                 cursor2.execute(query,(current_dsc,case_id))
@@ -427,8 +431,83 @@ def l_get_fd_shadow(case_id, field_id):
 
 
 
-def l_get_fd(case_id, field_id):
+def l_get_fd(anvil_user_id, case_id, field_id):
     print("l_get_fd, parameters:",case_id, field_id)
+    #current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
+    #current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+    current_lang = G.cached.get_language_id(anvil_user_id)
+    current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id,field_id)
+    if current_dsc==None:  ##DSC nicht eröffnet, abort
+        text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
+    else:
+        #current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
+        #shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
+        current_userID = cases_functions.l_get_user_id_for_case_id_modern(anvil_user_id,case_id)
+        shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id_modern(anvil_user_id,case_id) #is not = shadow  DSD!!!
+        if shadow_case_id==0: #make sure it is really a shadow case direct
+            #if cases_functions.l_get_shadow_case_indicator_for_case_id(case_id) is True:
+            if cases_functions.l_get_shadow_case_indicator_for_case_id_modern(anvil_user_id,case_id) is True:
+                shadow_case_id=case_id
+                print('get_fd:',case_id," is Shadow Case!")
+            else:
+                print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+        #azure = connections.Azure()
+        azure=G.cached.conn_get()
+        with azure:
+            cursor = azure.conn.cursor()
+            result= {}
+            query= """select 
+                        payload_text,
+                        payload_number,
+                        payload_boolean
+                      from 
+                        client_data_main
+                      where
+                        dsc_reference=? and case_id_reference=?
+                    """
+            cursor.execute(query,(current_dsc,case_id))
+            payload= cursor.fetchone()
+            # print("Payload", payload)
+
+            print('get_fd payload',payload)
+            if payload is None:
+                print("No record found in current data")
+                result = l_get_fd_shadow(anvil_user_id,shadow_case_id,field_id)  # if the record is not there, get it from the shadow
+                                                            # the shadow ensures that there is at least an empty record
+                                                            # now use the copy of the results either filled or new
+
+                new_record = l_add_cdm_entry(current_userID,
+                                case_id,
+                                current_dsc,
+                                pl_text=result['payload_text'],
+                                pl_number=result['payload_number'],
+                                pl_boolean=result['payload_boolean'])
+
+                azure2=G.cached.conn_get()
+                with azure2:
+                    cursor2 = azure2.conn.cursor()
+                    cursor2.execute(query,(current_dsc,case_id))
+                    payload=cursor2.fetchone()
+                    print('New payload:',payload)
+
+            print(payload)
+            result['payload_text']=payload[0]
+            result['payload_number'] = payload[1]
+            result['payload_boolean'] = payload[2]
+            print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
+            print(field_descriptions.l_get_label(current_lang, field_id))
+            result['label']=field_descriptions.l_get_label(current_lang,field_id)
+            result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
+            #  print(result)
+            return result
+
+#print(l_get_fd(case_id=400,field_id=510))
+
+# print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
+
+def l_get_fd_cached(anvil_user_id, case_id, field_id):
+    print("l_get_fd, parameters:",anvil_user_id, case_id, field_id)
     current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
     current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
     if current_dsc==None:  ##DSC nicht eröffnet, abort
@@ -463,7 +542,7 @@ def l_get_fd(case_id, field_id):
             print('get_fd payload',payload)
             if payload is None:
                 print("No record found in current data")
-                result = l_get_fd_shadow(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
+                result = l_get_fd_shadow(anvil_user_id, shadow_case_id, field_id)  # if the record is not there, get it from the shadow
                                                             # the shadow ensures that there is at least an empty record
                                                             # now use the copy of the results either filled or new
 
@@ -492,76 +571,7 @@ def l_get_fd(case_id, field_id):
             #  print(result)
             return result
 
-#print(l_get_fd(case_id=400,field_id=510))
-
-# print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
-
-def l_get_fd_cached(case_id, field_id):
-    print("l_get_fd, parameters:",case_id, field_id)
-    current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
-    current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    if current_dsc==None:  ##DSC nicht eröffnet, abort
-        text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
-    else:
-        current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
-        shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id(case_id) #is not = shadow  DSD!!!
-        if shadow_case_id==0: #make sure it is really a shadow case direct
-            if cases_functions.l_get_shadow_case_indicator_for_case_id(case_id) is True:
-                shadow_case_id=case_id
-                print('get_fd:',case_id," is Shadow Case!")
-            else:
-                print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
-        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
-        azure = connections.Azure()
-        with azure:
-            cursor = azure.conn.cursor()
-            result= {}
-            query= """select 
-                        payload_text,
-                        payload_number,
-                        payload_boolean
-                      from 
-                        client_data_main
-                      where
-                        dsc_reference=? and case_id_reference=?
-                    """
-            cursor.execute(query,(current_dsc,case_id))
-            payload= cursor.fetchone()
-            # print("Payload", payload)
-
-            print('get_fd payload',payload)
-            if payload is None:
-                print("No record found in current data")
-                result = l_get_fd_shadow(shadow_case_id,field_id)  # if the record is not there, get it from the shadow
-                                                            # the shadow ensures that there is at least an empty record
-                                                            # now use the copy of the results either filled or new
-
-                new_record = l_add_cdm_entry(current_userID,
-                                case_id,
-                                current_dsc,
-                                pl_text=result['payload_text'],
-                                pl_number=result['payload_number'],
-                                pl_boolean=result['payload_boolean'])
-
-                azure2=connections.Azure()
-                with azure2:
-                    cursor2 = azure2.conn.cursor()
-                    cursor2.execute(query,(current_dsc,case_id))
-                    payload=cursor2.fetchone()
-                    print('New payload:',payload)
-
-            print(payload)
-            result['payload_text']=payload[0]
-            result['payload_number'] = payload[1]
-            result['payload_boolean'] = payload[2]
-            print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-            print(field_descriptions.l_get_label(current_lang, field_id))
-            result['label']=field_descriptions.l_get_label(current_lang,field_id)
-            result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
-            #  print(result)
-            return result
-
-#print(l_get_fd(case_id=400,field_id=510))
+#print(l_get_fd(anvil_user_id='[344816,583548811]',case_id=400,field_id=510))
 
 # print(l_get_fd(case_id=110,field_id=160)) #test is ein Textfeld und muss behandelt werden!
 
@@ -572,7 +582,8 @@ def l_get_fd_cached(case_id, field_id):
 
 
 
-def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
+def l_set_fd(anvil_user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
+    user_id=users.l_get_userid_for_anvil_user(anvil_user_id)
     if pl_text=='=':
         update_text=False
     else:
@@ -591,7 +602,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
     if update_text==False and update_number==False and update_boolean==False:
         print ("set FD: nothing to update")
     else:  #we need to define the values to be updated
-        existing_payload = l_get_fd(case_id,field_id)
+        existing_payload = l_get_fd(anvil_user_id,case_id,field_id)
         if update_text==True:
             pl_new_text=pl_text
         else:
@@ -607,18 +618,22 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
         else:
             pl_new_boolean = existing_payload['payload_boolean']
     # ok, we have them
-        print("Update läuft mit folgenden Paras:", user_id,case_id,field_id,pl_new_text,pl_new_number,pl_new_boolean)
-        shadow_case_id=cases_functions.l_get_shadow_case_id_for_case_id(case_id)
+        print("Update läuft mit folgenden Paras:", anvil_user_id,case_id,field_id,pl_new_text,pl_new_number,pl_new_boolean)
+        # shadow_case_id=cases_functions.l_get_shadow_case_id_for_case_id(case_id)
+        shadow_case_id = cases_functions.l_get_shadow_case_id_for_case_id_modern(anvil_user_id, case_id)
 
         if shadow_case_id==0: #hey we may have a shadow-case in direct mode, let's make sure
-            is_shadow = cases_functions.l_get_shadow_case_indicator_for_case_id(case_id)
+            # is_shadow = cases_functions.l_get_shadow_case_indicator_for_case_id(case_id)
+            is_shadow = cases_functions.l_get_shadow_case_indicator_for_case_id_modern(anvil_user_id,case_id)
             if is_shadow is False:
                 msg = ("Set_fd: Bei case id {} ist die Shadow_id nicht gesetzt!").format(case_id)
                 return msg
         else:
             # shadow_case_id = case_id  # stellt case auf sich selbst ein
-            dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-            shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
+            #dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
+            dsc_id = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id, field_id)
+            #shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
+            shadow_dsc_id = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, shadow_case_id, field_id)
 
             #update normal  Record should exist -:)
             print("set_fd: dsc_id", dsc_id)
@@ -635,7 +650,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                                              current_table_id,
                                              current_payload)
             # print(previous_log_entry)
-            azure = connections.Azure()
+            azure = G.cached.conn_get()
             with azure:
                 cursor3 = azure.conn.cursor()
                 cursor3.execute("""UPDATE 
@@ -679,7 +694,7 @@ def l_set_fd(user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                 if id_to_change is None:
                     l_add_cdm_entry(user_id,shadow_case_id,shadow_dsc_id,pl_new_text,pl_new_number,pl_new_boolean)
                 else:
-                    azure = connections.Azure()
+                    azure = G.cached.conn_get()
                     with azure:
                         cursor4 = azure.conn.cursor()
                         cursor4.execute("""UPDATE 

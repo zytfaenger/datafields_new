@@ -1,11 +1,12 @@
 import connections
 import functions
+import pyodbc
 import users
 import log_functions
 
 
 
-def l_all_data_for_a_user(user_id):
+def l_all_data_for_a_user(anvil_user_id):
     azure = connections.Azure()
     with azure:
         cursor = azure.conn.cursor()
@@ -54,8 +55,8 @@ def l_all_data_for_a_user(user_id):
                 JOIN dbo.fields
                 ON dbo.[doc_set_comp].[field_id_reference] = dbo.fields.[field_id]
                 WHERE
-                dbo.users.user_id=?"""
-        cursor.execute(query, user_id)
+                dbo.users.user_anvil_user=?"""
+        cursor.execute(query, anvil_user_id)
         results = cursor.fetchall()
         columns = [column[0] for column in cursor.description]
         res = []
@@ -64,7 +65,7 @@ def l_all_data_for_a_user(user_id):
 
 # [print(r) for r in l_all_data_for_a_user(180)]
 
-def l_all_info_for_a_user(user_id,language_id):
+def l_all_info_for_a_user(anvil_user_id,language_id):
     azure = connections.Azure()
     with azure:
         cursor = azure.conn.cursor()
@@ -137,9 +138,9 @@ def l_all_info_for_a_user(user_id,language_id):
                     JOIN dbo.[field_types]
                     ON dbo.fields.[field_typ_id] = dbo.[field_types].[ft_id]
                     WHERE
-                    dbo.users.user_id=? and
+                    dbo.users.user_anvil_user=? and
                     dbo.field_descriptions.language_id_reference=?"""
-        cursor.execute(query, (user_id,language_id))
+        cursor.execute(query, (anvil_user_id,language_id))
         results = cursor.fetchall()
         columns = [column[0] for column in cursor.description]
         res = []
@@ -151,23 +152,40 @@ class cache_obj():
     def __init__(self):
         self.user_info={}
         self.user_data={}
+        self.conn= {}
+        self.language_id={}
 
-    def info_add(self,user_id,language_id=1):
-        info = l_all_info_for_a_user(user_id,language_id)
-        self.user_info[user_id]=info
 
-    def info_get(self,user_id):
-        return self.user_info[user_id]
+    def info_add(self, anvil_user_id, language_id=1):
+        info = l_all_info_for_a_user(anvil_user_id, language_id)
+        self.user_info[anvil_user_id]=info
+        self.language_id[anvil_user_id]=language_id
 
-    def data_add(self, user_id):
-        data = l_all_data_for_a_user(user_id)
-        self.user_data[user_id] = data
+    def info_get(self, anvil_user_id):
+        return self.user_info[anvil_user_id]
 
-    def data_get(self, user_id):
-        return self.user_data[user_id]
+    def get_language_id(self,anvil_user_id):
+        return self.language_id[anvil_user_id]
 
-    def get_fd_cached(self,user_id,case_id,field_id):
-        user_data=self.data_get(user_id)
+
+    def data_add(self, anvil_user_id):
+        data = l_all_data_for_a_user(anvil_user_id)
+        self.user_data[anvil_user_id] = data
+
+    def data_get(self, anvil_user_id):
+        return self.user_data[anvil_user_id]
+
+    def conn_add(self,anvil_user_id):
+        azure = connections.Azure()
+        connect_string=azure.connect_string
+        conn=pyodbc.connect(connect_string)
+        self.conn[anvil_user_id]=conn
+
+    def conn_get(self,anvil_user_id):
+        return self.conn[anvil_user_id]
+
+    def get_fd_cached(self,anvil_user_id,case_id,field_id):
+        user_data=self.data_get(anvil_user_id)
 
         data=list(filter(lambda r: r['case_id']==case_id and r['field_id']==field_id, user_data))
         if len(data)>0:
@@ -177,7 +195,7 @@ class cache_obj():
             res['payload_boolean']=data[0]['payload_boolean']
 
 
-            user_info=self.info_get(user_id)
+            user_info=self.info_get(anvil_user_id)
             info=list(filter(lambda r: r['case_id']==case_id and r['field_id']==field_id, user_info))
             if len(info)>0:
                 res['label']  = info[0]['field_desc_label']
@@ -186,18 +204,19 @@ class cache_obj():
         else:
             return None
 
-cache=cache_obj()
-cache.data_add(180)
-cache.data_add(230)
-cache.info_add(180,1)
-cache.info_add(230,1)
-
-r180= cache.info_get(180)
-r230=cache.info_get(230)
-d180=cache.data_get(180)
-d230=cache.data_get(230)
+# cache=cache_obj()
+# cache.data_add('[344816,583548811]')
+# cache.data_add('[344816,588718435]')
+# cache.info_add('[344816,583548811]',1)
+# cache.info_add('[344816,588718435]',1)
+# print(cache.get_language_id('[344816,583548811]'))
+#
+# r180= cache.info_get('[344816,583548811]')
+# r230=cache.info_get('[344816,588718435]')
+# d180=cache.data_get('[344816,583548811]')
+# d230=cache.data_get('[344816,588718435]')
 # [print(r['client_id']) for r in r180]
-# [print(r['client_id']) for r in r230]
+# # [print(r['client_id']) for r in r230]
 # [print(d['client_id_ref']) for d in d180]
-#[print(d['client_id_ref']) for d in d230]
-# cache.get_fd_cached(180,400,120)
+# #[print(d['client_id_ref']) for d in d230]
+# # cache.get_fd_cached(180,400,120)

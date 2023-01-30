@@ -4,6 +4,7 @@ import fields_functions
 import functions
 import log_functions
 import connections
+import globals as G
 
 
 def l_get_active_dsc():
@@ -242,6 +243,44 @@ def l_select_dsc_id_by_case_and_field(case_id,field_id):
         else:
             return result[1]
                 #print(results[0]
+
+def l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id,field_id):
+
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.conn.cursor()
+        cursor.execute("""select 
+                            EasyEL.dbo.cases.case_id,
+                            EasyEL.dbo.doc_set_comp.dsc_id
+                           from 
+                            EasyEL.dbo.cases
+                            join EasyEL.dbo.doc_set_def on EasyEL.dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
+                            join EasyEL.dbo.doc_set_comp on doc_set_comp.dsd_reference = EasyEL.dbo.doc_set_def.dsd_id                                                                
+                            where 
+                            (cases.case_id=?) AND (field_id_reference = ?)""",
+                            (case_id,field_id))
+        result=cursor.fetchone()
+        # print ("dsc_id ist:", result)
+        if result is None:
+            current_field_fype_id = fields_functions.l_select_field_by_id(field_id)['field_typ_id'] #get me the field type please
+            in_shadow_case = doc_set_definition.l_is_shadow_case(case_id)
+            if in_shadow_case==False:
+               msg=("select_dsc_id_by_case_and_field: no record in current case for case {}, field: {} -->strange").format(case_id,field_id)
+               print(msg)
+               return None
+            else:
+                field_is_Shadow =  field_types.l_select_field_type_by_id(current_field_fype_id)['ft_shadow_store']   #is it shadow?
+                if field_is_Shadow is False:
+                    msg = ("from select_dsc_id_by_case_and_field --> field_id: {} has field_type: {} where shadow is {}").format(field_id,current_field_fype_id,field_is_Shadow)
+                    print(msg)
+                else:
+                    msg = ("from select_dsc_id_by_case_and_field --> for field_id = {} shadow = true, but record not in store yet  --> if shadow-case,check completeness of shadow!").format(field_id)
+                    print(msg)
+                return None
+        else:
+            return result[1]
+                #print(results[0]
+
 
 # print(l_select_dsc_id_by_case_and_field(400,510))
 

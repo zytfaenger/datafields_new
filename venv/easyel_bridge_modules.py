@@ -323,31 +323,27 @@ def change_status_dsc_by_id(id_to_change: int, new_status: int):
 
 
 @anvil.server.callable
-@anvil.tables.in_transaction()
-def set_fd_direct(user_id, case_id, field_id, pl_text, pl_number, pl_boolean):
-    client_data_main.l_set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
+# def set_fd_direct(user_id, case_id, field_id, pl_text, pl_number, pl_boolean):
+#     client_data_main.l_set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 @anvil.server.callable
-@anvil.tables.in_transaction()
 def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean):
-    user_id=users.l_get_userid_for_anvil_user(anvil_user_id_txt)
-    print("set_fd: folgender User ist gesetzt:", anvil_user_id_txt,"-->",user_id)
-    client_data_main.l_set_fd(user_id, case_id, field_id, pl_text, pl_number, pl_boolean)
+    #user_id=users.l_get_userid_for_anvil_user(anvil_user_id_txt)
+    #print("set_fd: folgender User ist gesetzt:", anvil_user_id_txt,"-->",user_id)
+    client_data_main.l_set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
-@anvil.tables.in_transaction()
-def get_fd(case_id, field_id):  # in Client_data_main
-    res=G.cached.get_fd_cached(180,case_id,field_id)
+def get_fd(anvil_user_id, case_id, field_id):  # in Client_data_main
+    res=G.cached.get_fd_cached(anvil_user_id,case_id,field_id)
     if res is None:
-        return client_data_main.l_get_fd(case_id, field_id)
+        return client_data_main.l_get_fd(anvil_user_id, case_id, field_id)
     else:
         print('cached')
         return res
 @anvil.server.callable
-@anvil.tables.in_transaction()
-def get_fd_shadow(case_id, field_id):  # in Client_data_main
-    return client_data_main.l_get_fd_shadow(case_id, field_id)
+def get_fd_shadow(anvil_user_id, case_id, field_id):  # in Client_data_main
+    return client_data_main.l_get_fd_shadow(anvil_user_id, case_id, field_id)
 
 
 @anvil.server.callable
@@ -447,6 +443,17 @@ def ensure_doc(case_id, field_id):
 def ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year):
     print(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year)
     return juno.l_ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year)
+
+
+# ---- juno.functions.py --------------
+
+@anvil.server.callable()
+def register_and_setup_user(anvil_user_id,language_id=1):
+    G.load_cache(anvil_user_id,language_id)
+    G.register_conn(anvil_user_id)
+@anvil.server.callable()
+def update_data_cache(anvil_user_id):
+    G.reload_data_cache(anvil_user_id)
 
 @anvil.server.callable()
 def get_client_list(anvil_user_id):

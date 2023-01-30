@@ -305,8 +305,8 @@ def get_fd(case_id, field_id):  # in Client_data_main
     return client_data_main.l_get_fd(case_id, field_id)
 
 @anvil.server.callable
-def get_fd_shadow(case_id, field_id):  # in Client_data_main
-    return client_data_main.l_get_fd_shadow(case_id, field_id)
+def get_fd_shadow(anvil_user_id, case_id, field_id):  # in Client_data_main
+    return client_data_main.l_get_fd_shadow(anvil_user_id, case_id, field_id)
 
 
 @anvil.server.callable

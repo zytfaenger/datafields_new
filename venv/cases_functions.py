@@ -3,6 +3,7 @@ import connections
 import functions
 import users
 import log_functions
+import globals as G
 
 def l_get_active_cases():
     azure = connections.Azure()
@@ -384,6 +385,30 @@ def l_get_user_id_for_case_id(ca_id):
 
 # print(l_get_user_id_for_case_id(170))
 
+def l_get_user_id_for_case_id_modern(anvil_user_id,ca_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.conn.cursor()
+        query="""
+            select user_id 
+            from
+             EasyEL.dbo.cases
+            where
+             case_id=?   
+        """
+        cursor.execute(query,ca_id)
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        else:
+            return result[0]
+
+# print(l_get_user_id_for_case_id(170))
+
+
+
+
+
 def l_get_client_id_for_case_id(ca_id):
     azure = connections.Azure()
     with azure:
@@ -429,6 +454,36 @@ def l_get_shadow_case_id_for_case_id(ca_id):
             return shadow_case_id
 
 # print(l_get_shadow_case_id_for_case_id(200))
+
+def l_get_shadow_case_id_for_case_id_modern(anvil_user_id, ca_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.conn.cursor()
+        query= """
+            select shadow_case_id 
+            from
+             EasyEL.dbo.cases
+            where
+             case_id=?   
+        """
+
+        cursor.execute(query,ca_id)
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        else:
+            shadow_case_id = None
+            for r in result:
+                shadow_case_id=r
+            return shadow_case_id
+
+# print(l_get_shadow_case_id_for_case_id(200))
+
+
+
+
+
+
 
 def l_get_shadow_case_id_for_client_id(client_id):
     azure = connections.Azure()
@@ -481,6 +536,35 @@ def l_get_shadow_case_indicator_for_case_id(ca_id):
 # print(l_get_shadow_case_indicator_for_case_id(170))
 # print(l_get_shadow_case_id_for_case_id(100))
 # print(l_get_shadow_case_indicator_for_case_id(100))
+
+def l_get_shadow_case_indicator_for_case_id_modern(anvil_user_id,ca_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.conn.cursor()
+        query= """
+            select shadow_case_indicator
+            from
+             EasyEL.dbo.cases
+            where
+             case_id=?   
+        """
+        cursor.execute(query,ca_id)
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        else:
+            shadow_case_ind = None
+            for r in result:
+                shadow_case_ind=r
+            return shadow_case_ind
+
+# print(l_get_shadow_case_id_for_case_id(170))
+# print(l_get_shadow_case_indicator_for_case_id(170))
+# print(l_get_shadow_case_id_for_case_id(100))
+# print(l_get_shadow_case_indicator_for_case_id(100))
+
+
+
 
 def l_select_language_short_by_case_id(case_id):
     azure = connections.Azure()
