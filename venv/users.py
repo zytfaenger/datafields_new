@@ -75,6 +75,40 @@ def l_get_active_users():
 
 # [print(r) for r in l_get_active_users()]
 
+def l_get_active_users():
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """SELECT 
+                            user_id,
+                            user_anvil_user,
+                            anvil_user_1_int,
+                            anvil_user_1_int,  
+                            temp_user,
+                            client_id_reference,                
+                            admin_user, 
+                            admin_previous_entry, 
+                            admin_active, 
+                            admin_timestamp
+                        FROM 
+                            users 
+                        WHERE 
+                            admin_active=?"""
+        cursor.execute(query,1)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+# [print(r) for r in l_get_active_users()]
+
+
+
+
+
+
 
 
 def l_get_all_users():
@@ -181,26 +215,25 @@ def l_get_user_by_client_id(client_id):
 #print(a['anvil_user_2_int'])
 
 
-def l_get_userid_for_anvil_user(anvil_usr_id:str):
-    print('get userId for anvil_user', anvil_usr_id)
+def l_get_userid_for_anvil_user(anvil_user_id:str):
     azure = connections.Azure()
     with azure:
         cursor = azure.conn.cursor()
-        cursor.execute("""SELECT 
+        cursor.execute("""SELECT
                             user_id,
                             user_anvil_user,
                             anvil_user_1_int,
-                            anvil_user_2_int, 
+                            anvil_user_2_int,
                             temp_user,
-                            client_id_reference,                  
-                            admin_user, 
-                            admin_previous_entry, 
-                            admin_active, 
+                            client_id_reference,
+                            admin_user,
+                            admin_previous_entry,
+                            admin_active,
                             admin_timestamp
-                        FROM 
-                            users 
-                        where 
-                            user_anvil_user=?""", anvil_usr_id)
+                        FROM
+                            users
+                        where
+                            user_anvil_user=?""", anvil_user_id)
         columns = [column[0] for column in cursor.description]
         # print(columns)
         results = cursor.fetchone()
@@ -212,7 +245,7 @@ def l_get_userid_for_anvil_user(anvil_usr_id:str):
             # print(results[0])
             return res[0]['user_id']
 
-# print(l_get_userid_for_anvil_user('[344816,524933170]'))
+#print(l_get_userid_for_anvil_user('[344816,588453780]'))
 
 
 def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
@@ -360,51 +393,47 @@ def l_upate_client_ref(db_user_id,client_id):
 def l_get_new_temp_user_id(anvil_usr_to_change):
     print('l_get_new_temp_user_id:', anvil_usr_to_change)
     usr_id=l_get_userid_for_anvil_user(anvil_usr_to_change)
-    if usr_id is None:
-        print("get_new_temp_user: no such anvil usr!!")
-        return None
-    else:
-        # print('l_get_new_temp_user:',anvil_usr_to_change)
-        current_adminuser = l_get_user_by_id(usr_id)['admin_user']
-        current_timestamp = functions.make_timestamp()
-        current_table_name = 'users'
-        current_table_id = usr_id
-        current_payload = str(l_get_user_by_id(usr_id))
-        # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
-        previous_log_entry = add_log_entry(
-            current_adminuser,
-            current_timestamp,
-            current_table_name,
-            current_table_id,
-            current_payload)
-        # print(previous_log_entry)
+    # print('l_get_new_temp_user:',anvil_usr_to_change)
+    current_adminuser = l_get_user_by_id(usr_id)['admin_user']
+    current_timestamp = functions.make_timestamp()
+    current_table_name = 'users'
+    current_table_id = usr_id
+    current_payload = str(l_get_user_by_id(usr_id))
+    # print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+    previous_log_entry = add_log_entry(
+        current_adminuser,
+        current_timestamp,
+        current_table_name,
+        current_table_id,
+        current_payload)
+    # print(previous_log_entry)
 
-        azure = connections.Azure()
-        with azure:
-            cursor3 = azure.conn.cursor()
-            temp_usr=create_admin_user()
-            # print('get_new_temp user: New temp user is:', temp_usr)
-            # print("test of equality:",temp_usr==str(temp_usr),str(temp_usr))
-            query = """UPDATE 
-                            users
-                        SET 
-                            temp_user = ?,
-                            admin_user=?,
-                            admin_previous_entry=?,
-                            admin_active=?,
-                            admin_timestamp=?
-                        WHERE 
-                            user_id=?"""
-            cursor3.execute(query, (temp_usr,
-                                   current_adminuser,
-                                   previous_log_entry,
-                                   1,
-                                   current_timestamp,
-                                   usr_id))
-            cursor3.commit()
+    azure = connections.Azure()
+    with azure:
+        cursor3 = azure.conn.cursor()
+        temp_usr=create_admin_user()
+        # print('get_new_temp user: New temp user is:', temp_usr)
+        # print("test of equality:",temp_usr==str(temp_usr),str(temp_usr))
+        query = """UPDATE 
+                        users
+                    SET 
+                        temp_user = ?,
+                        admin_user=?,
+                        admin_previous_entry=?,
+                        admin_active=?,
+                        admin_timestamp=?
+                    WHERE 
+                        user_id=?"""
+        cursor3.execute(query, (temp_usr,
+                               current_adminuser,
+                               previous_log_entry,
+                               1,
+                               current_timestamp,
+                               usr_id))
+        cursor3.commit()
 
-            return str(temp_usr)
-    # (id_to_change, "updated")
+        return str(temp_usr)
+# (id_to_change, "updated")
 #l_get_new_temp_user_id('[344816,524933170]')
 
 

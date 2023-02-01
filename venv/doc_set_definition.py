@@ -231,8 +231,8 @@ def l_add_dsd_entry(name, domain, year):
 # l_add_dsd_entry('EL','SO',2023)
 def l_update_dsd(id_to_change, name, domain, year):
     #print('l_updateft:',id_to_change,reference,field_id,sequence)
-    current_user=get_user()
-    current_timestamp = make_timestamp()
+    current_user=functions.get_user()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'doc_set_def'
     current_table_id=id_to_change
     current_payload=str(l_select_dsd_by_id(id_to_change))
@@ -243,11 +243,23 @@ def l_update_dsd(id_to_change, name, domain, year):
                                      current_table_id,
                                      current_payload)
     #print(previous_log_entry)
-    cursor3=conn.cursor()
-    cursor3.execute("UPDATE doc_set_def SET dsd_name=?,dsd_domain=?,dsd_year=?,admin_user=?,admin_timestamp=?,admin_previous_entry=?,admin_active=? "
-                    "WHERE dsd_id=?",
-                    (name, domain, year, current_user, current_timestamp, previous_log_entry, 1, id_to_change))
-    cursor3.commit()
+    azure = connections.Azure()
+    with azure:
+        cursor3 = azure.conn.cursor()
+        cursor3.execute(""" UPDATE 
+                                doc_set_def 
+                            SET 
+                                dsd_name=?,
+                                dsd_domain=?,
+                                dsd_year=?,
+                                admin_user=?,
+                                admin_timestamp=?,
+                                admin_previous_entry=?,
+                                admin_active=? 
+                            WHERE 
+                                dsd_id=?""",
+                        (name, domain, year, current_user, current_timestamp, previous_log_entry, 1, id_to_change))
+        cursor3.commit()
 
 
 def l_change_status_dsd_by_id(id_to_change:int,new_status:int):

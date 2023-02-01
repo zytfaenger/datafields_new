@@ -149,9 +149,9 @@ def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #che
     if usr_id is None:
         print("no such user Id")
     else:
-        azure = connections.Azure()
+        azure = G.cached.conn_get(anvil_usr_id)
         with azure:
-            cursor = azure.conn.cursor()
+            cursor = azure.cursor()
             query: str = """SELECT 
                                 case_id, 
                                 client_id_ref, 
@@ -363,7 +363,7 @@ def l_get_dsd_reference_for_case_id(ca_id):
         # print('l_get_dsd_reference_for_case_id:',ca_id, " ist: dsd:",dsd)
             return dsd
 
-# print(l_get_dsd_reference_for_case_id(100))
+#print(l_get_dsd_reference_for_case_id(400))
 
 def l_get_user_id_for_case_id(ca_id):
     azure = connections.Azure()
@@ -388,7 +388,7 @@ def l_get_user_id_for_case_id(ca_id):
 def l_get_user_id_for_case_id_modern(anvil_user_id,ca_id):
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query="""
             select user_id 
             from
@@ -458,7 +458,7 @@ def l_get_shadow_case_id_for_case_id(ca_id):
 def l_get_shadow_case_id_for_case_id_modern(anvil_user_id, ca_id):
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query= """
             select shadow_case_id 
             from

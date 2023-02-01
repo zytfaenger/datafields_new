@@ -1,6 +1,7 @@
 import cases_functions
 import doc_set_compositions
 import functions
+import language_functions
 import users
 import log_functions
 import connections
@@ -384,13 +385,13 @@ def l_get_fd_shadow(anvil_user_id, case_id, field_id):
     # current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
     #current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
     #current_userID=cases_functions.l_get_user_id_for_case_id(case_id)
-    current_lang= G.cached.get_language_id(anvil_user_id)
+    current_lang_id= G.cached.get_language_id(anvil_user_id)
     current_dsc = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id,case_id, field_id)
     current_userID=cases_functions.l_get_user_id_for_case_id_modern(anvil_user_id, case_id)
-    print("zwischenstand l_get_fd: ", case_id, field_id,current_lang, current_dsc, current_userID)
-    azure = G.cached.conn_get()
+    print("zwischenstand l_get_fd: ", case_id, field_id,current_lang_id, current_dsc, current_userID)
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         result= {}
         query= """select 
                     payload_text,
@@ -409,9 +410,9 @@ def l_get_fd_shadow(anvil_user_id, case_id, field_id):
             print("No shadow record found")
             l_add_cdm_entry(current_userID, case_id, current_dsc, 'None',99999,False)
             print('get_fd_shadow: missing cdm shadow record added!')
-            azure2 = G.cached.conn_get()
+            azure2 = G.cached.conn_get(anvil_user_id)
             with azure2:
-                cursor2=azure2.conn.cursor()
+                cursor2=azure2.cursor()
                 cursor2.execute(query,(current_dsc,case_id))
                 payload=cursor2.fetchone()
                 print('New payload:',payload)
@@ -420,8 +421,8 @@ def l_get_fd_shadow(anvil_user_id, case_id, field_id):
         result['payload_text']=payload[0]
         result['payload_number']=payload[1]
         result['payload_boolean'] = payload[2]
-        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-        print(field_descriptions.l_get_label(current_lang, field_id))
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang_id, current_dsc, payload)
+        print(field_descriptions.l_get_label_by_id_modern(anvil_user_id,current_lang_id, field_id))
         # result['label']=l_get_label(current_lang,field_id)  # not necessary, because no labels are created in shadow
         # result['prompt']=l_get_prompt(current_lang,field_id) # not necessary, because no labels are created in shadow
         print(result)
@@ -435,7 +436,7 @@ def l_get_fd(anvil_user_id, case_id, field_id):
     print("l_get_fd, parameters:",case_id, field_id)
     #current_lang=cases_functions.l_select_language_short_by_case_id(case_id)
     #current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-    current_lang = G.cached.get_language_id(anvil_user_id)
+    current_lang_id = G.cached.get_language_id(anvil_user_id)
     current_dsc=doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id,field_id)
     if current_dsc==None:  ##DSC nicht eröffnet, abort
         text=("DSC not set!! Cannot create cdm record for case {}, field {}!").format(case_id,field_id)
@@ -451,11 +452,11 @@ def l_get_fd(anvil_user_id, case_id, field_id):
                 print('get_fd:',case_id," is Shadow Case!")
             else:
                 print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
-        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
+        print("zwischenstand l_get_fd: ", case_id, field_id, current_lang_id, current_dsc,current_userID)
         #azure = connections.Azure()
-        azure=G.cached.conn_get()
+        azure = G.cached.conn_get(anvil_user_id)
         with azure:
-            cursor = azure.conn.cursor()
+            cursor = azure.cursor()
             result= {}
             query= """select 
                         payload_text,
@@ -484,9 +485,9 @@ def l_get_fd(anvil_user_id, case_id, field_id):
                                 pl_number=result['payload_number'],
                                 pl_boolean=result['payload_boolean'])
 
-                azure2=G.cached.conn_get()
+                azure2=G.cached.conn_get(anvil_user_id)
                 with azure2:
-                    cursor2 = azure2.conn.cursor()
+                    cursor2 = azure2.cursor()
                     cursor2.execute(query,(current_dsc,case_id))
                     payload=cursor2.fetchone()
                     print('New payload:',payload)
@@ -495,10 +496,11 @@ def l_get_fd(anvil_user_id, case_id, field_id):
             result['payload_text']=payload[0]
             result['payload_number'] = payload[1]
             result['payload_boolean'] = payload[2]
-            print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
-            print(field_descriptions.l_get_label(current_lang, field_id))
-            result['label']=field_descriptions.l_get_label(current_lang,field_id)
-            result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
+            print("zwischenstand l_get_fd: ", case_id, field_id, current_lang_id, current_dsc, payload)
+            print(field_descriptions.l_get_label_by_id(current_lang_id, field_id))
+            cursor.close()
+            result['label']=field_descriptions.l_get_label_by_id_modern(anvil_user_id,current_lang_id,field_id)
+            result['prompt']=field_descriptions.l_get_prompt_by_id_modern(anvil_user_id,current_lang_id,field_id)
             #  print(result)
             return result
 
@@ -522,9 +524,9 @@ def l_get_fd_cached(anvil_user_id, case_id, field_id):
             else:
                 print("l_get_fd_case: Shadow_Case not defined for Case:", case_id)
         print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc,current_userID)
-        azure = connections.Azure()
+        azure = G.cached.conn_get(anvil_user_id)
         with azure:
-            cursor = azure.conn.cursor()
+            cursor = azure.cursor()
             result= {}
             query= """select 
                         payload_text,
@@ -553,9 +555,9 @@ def l_get_fd_cached(anvil_user_id, case_id, field_id):
                                 pl_number=result['payload_number'],
                                 pl_boolean=result['payload_boolean'])
 
-                azure2=connections.Azure()
+                azure2=G.cached.conn_get(anvil_user_id)
                 with azure2:
-                    cursor2 = azure2.conn.cursor()
+                    cursor2 = azure2.cursor()
                     cursor2.execute(query,(current_dsc,case_id))
                     payload=cursor2.fetchone()
                     print('New payload:',payload)
@@ -566,6 +568,7 @@ def l_get_fd_cached(anvil_user_id, case_id, field_id):
             result['payload_boolean'] = payload[2]
             print("zwischenstand l_get_fd: ", case_id, field_id, current_lang, current_dsc, payload)
             print(field_descriptions.l_get_label(current_lang, field_id))
+            cursor.close()
             result['label']=field_descriptions.l_get_label(current_lang,field_id)
             result['prompt']=field_descriptions.l_get_prompt(current_lang,field_id)
             #  print(result)
@@ -631,8 +634,8 @@ def l_set_fd(anvil_user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
         else:
             # shadow_case_id = case_id  # stellt case auf sich selbst ein
             #dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(case_id,field_id)
-            dsc_id = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id, field_id)
             #shadow_dsc_id=doc_set_compositions.l_select_dsc_id_by_case_and_field(shadow_case_id,field_id)
+            dsc_id = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id, field_id)
             shadow_dsc_id = doc_set_compositions.l_select_dsc_id_by_case_and_field_modern(anvil_user_id, shadow_case_id, field_id)
 
             #update normal  Record should exist -:)
@@ -650,9 +653,9 @@ def l_set_fd(anvil_user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                                              current_table_id,
                                              current_payload)
             # print(previous_log_entry)
-            azure = G.cached.conn_get()
+            azure = G.cached.conn_get(anvil_user_id)
             with azure:
-                cursor3 = azure.conn.cursor()
+                cursor3 = azure.cursor()
                 cursor3.execute("""UPDATE 
                                     client_data_main 
                                    SET 
@@ -694,9 +697,9 @@ def l_set_fd(anvil_user_id, case_id, field_id,pl_text,pl_number,pl_boolean):
                 if id_to_change is None:
                     l_add_cdm_entry(user_id,shadow_case_id,shadow_dsc_id,pl_new_text,pl_new_number,pl_new_boolean)
                 else:
-                    azure = G.cached.conn_get()
+                    azure = G.cached.conn_get(anvil_user_id)
                     with azure:
-                        cursor4 = azure.conn.cursor()
+                        cursor4 = azure.cursor()
                         cursor4.execute("""UPDATE 
                                                 client_data_main 
                                            SET 

@@ -46,11 +46,18 @@ def get_all_languages():
 def select_language_by_shortname(short_name):
     return language_functions.l_select_language_by_shortname(short_name)
 
+@anvil.server.callable()
+def select_language_by_shortname_modern(anvil_user_id, short_name):
+    return language_functions.l_select_language_by_shortname_modern(anvil_user_id,short_name)
 
 @anvil.server.callable()
 def select_language_by_id(lang_id):
     return language_functions.l_select_language_by_id(lang_id)
 
+
+@anvil.server.callable()
+def select_language_by_id_modern(anvil_user_id, lang_id):
+    return language_functions.l_select_language_by_id(anvil_user_id, lang_id)
 
 @anvil.server.callable()
 def select_language_by_case(case_id):
@@ -157,14 +164,22 @@ def select_field_by_id(f_id):
     return fields_functions.l_select_field_by_id(f_id)
 
 @anvil.server.callable
-@anvil.tables.in_transaction()
 def get_field_sub_group_value_for_id(f_id):
     return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 # print(l_get_field_sub_group_value_for_id(230))
 
 @anvil.server.callable
+def get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
+    return fields_functions.l_get_field_sub_group_value_for_id_modern(anvil_user_id,f_id)
+
+@anvil.server.callable
 def get_field_sub_group_for_id(f_id):
     return fields_functions.l_get_field_sub_group_for_id(f_id)
+
+@anvil.server.callable
+def get_field_sub_group_for_id_modern(anvil_user_id, f_id):
+    return fields_functions.l_get_field_sub_group_for_id_modern(anvil_user_id,f_id)
+
 
 @anvil.server.callable
 def add_field(
@@ -266,7 +281,6 @@ def get_all_dsc():
     return doc_set_compositions.l_get_all_dsc()
 
 @anvil.server.callable
-@anvil.tables.in_transaction()
 def get_dsd_reference_for_case_id(ca_id):
     return cases_functions.l_get_dsd_reference_for_case_id(ca_id)
 
@@ -280,9 +294,9 @@ def ensure_completeness_of_shadow_dsc(dsd_id=120):
     doc_set_compositions.l_ensure_completeness_of_shadow_dsc(dsd_id)
 
 
-@anvil.server.callable
-def select_dsc_to_store_for_dsd(case_dsd, case_language):
-    return doc_set_compositions.l_select_dsc_to_store_for_dsd(case_dsd, case_language)
+# @anvil.server.callable
+# def select_dsc_to_store_for_dsd(case_dsd, case_language):
+#     return doc_set_compositions.l_select_dsc_to_store_for_dsd(case_dsd, case_language)
 
 
 @anvil.server.callable
@@ -328,14 +342,17 @@ def change_status_dsc_by_id(id_to_change: int, new_status: int):
 
 @anvil.server.callable
 def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean):
-    #user_id=users.l_get_userid_for_anvil_user(anvil_user_id_txt)
-    #print("set_fd: folgender User ist gesetzt:", anvil_user_id_txt,"-->",user_id)
     client_data_main.l_set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
 def get_fd(anvil_user_id, case_id, field_id):  # in Client_data_main
+    print('get_fd_debug:',anvil_user_id,case_id,field_id)
+    if type(anvil_user_id) is list:
+        anvil_user_id=str(anvil_user_id)
+        print('type is now:', type(anvil_user_id) )
     res=G.cached.get_fd_cached(anvil_user_id,case_id,field_id)
+    print('get_fd_res:',res)
     if res is None:
         return client_data_main.l_get_fd(anvil_user_id, case_id, field_id)
     else:
@@ -449,11 +466,17 @@ def ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_ye
 
 @anvil.server.callable()
 def register_and_setup_user(anvil_user_id,language_id=1):
-    G.load_cache(anvil_user_id,language_id)
-    G.register_conn(anvil_user_id)
+    G.cached.conn_add(anvil_user_id) #must be first otherwise user_cache is not set
+    G.cached.user_id_add(anvil_user_id)
+    if len(G.cached.user_id)==1:
+        G.cached.make_user_cache()
+    G.cached.data_add(anvil_user_id)
+    G.cached.info_add(anvil_user_id,language_id)
+    # if G.cached.anvil_user_has_user(anvil_user_id) is False:
+    #     G.register_user_id(anvil_user_id)
 @anvil.server.callable()
 def update_data_cache(anvil_user_id):
-    G.reload_data_cache(anvil_user_id)
+    G.cached.data_add(anvil_user_id)
 
 @anvil.server.callable()
 def get_client_list(anvil_user_id):

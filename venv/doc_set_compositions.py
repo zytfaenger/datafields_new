@@ -248,7 +248,7 @@ def l_select_dsc_id_by_case_and_field_modern(anvil_user_id, case_id,field_id):
 
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         cursor.execute("""select 
                             EasyEL.dbo.cases.case_id,
                             EasyEL.dbo.doc_set_comp.dsc_id

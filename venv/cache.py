@@ -3,13 +3,13 @@ import functions
 import pyodbc
 import users
 import log_functions
-
+import globals as G
 
 
 def l_all_data_for_a_user(anvil_user_id):
-    azure = connections.Azure()
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query= """SELECT
                 dbo.users.[user_id],
                 dbo.users.[user_anvil_user],
@@ -66,9 +66,9 @@ def l_all_data_for_a_user(anvil_user_id):
 # [print(r) for r in l_all_data_for_a_user(180)]
 
 def l_all_info_for_a_user(anvil_user_id,language_id):
-    azure = connections.Azure()
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query= """SELECT
                     dbo.users.[user_id],
                     dbo.users.[user_anvil_user],
@@ -148,12 +148,33 @@ def l_all_info_for_a_user(anvil_user_id,language_id):
         return res
 # [print(r) for r in l_all_info_for_a_user(180,1)]
 
+def get_list_of_active_users(anvil_user_id): #any existing user will do
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            user_id,
+                            user_anvil_user as anvil_user
+                        FROM 
+                            users 
+                        WHERE 
+                            admin_active=?"""
+        cursor.execute(query,1)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+
 class cache_obj():
     def __init__(self):
         self.user_info={}
         self.user_data={}
         self.conn= {}
         self.language_id={}
+        self.user_id={}
 
 
     def info_add(self, anvil_user_id, language_id=1):
@@ -184,6 +205,32 @@ class cache_obj():
     def conn_get(self,anvil_user_id):
         return self.conn[anvil_user_id]
 
+
+    def user_id_add(self, anvil_user_id):
+        user_id = users.l_get_userid_for_anvil_user(anvil_user_id)
+        self.user_id[anvil_user_id] = user_id
+
+    def user_id_add_direct(self, anvil_user_id, user_id):
+        self.user_id[anvil_user_id] = user_id
+
+    def user_id_get(self, anvil_user_id):
+        return self.user_id[anvil_user_id]
+
+    def anvil_user_has_user(self,anvil_user_id):
+        try:
+            user_id=self.user_id_get(anvil_user_id)
+            return True
+        except:
+            return False
+
+    def make_user_cache(self):
+        if self.user_id=={}:
+            print('Error: one anvil-user connection must be added first')
+        else:
+            active_users = get_list_of_active_users(list(self.user_id.keys())[0])
+            for u in active_users:
+                self.user_id_add_direct(u['anvil_user'], u['user_id'])
+
     def get_fd_cached(self,anvil_user_id,case_id,field_id):
         user_data=self.data_get(anvil_user_id)
 
@@ -204,19 +251,34 @@ class cache_obj():
         else:
             return None
 
+# #sequence is important
+# #create object
 # cache=cache_obj()
+# #make connections first
+# cache.conn_add('[344816,583548811]')
+# cache.conn_add('[344816,588718435]')
+# #add one user
+# cache.user_id_add('[344816,583548811]')
+# #then add user_list
+# cache.make_user_cache()
+# #print(cache.user_id)
+# #then get existing_data
 # cache.data_add('[344816,583548811]')
 # cache.data_add('[344816,588718435]')
 # cache.info_add('[344816,583548811]',1)
 # cache.info_add('[344816,588718435]',1)
-# print(cache.get_language_id('[344816,583548811]'))
+# # print(cache.get_language_id('[344816,583548811]'))
+# cache.user_id_add('[344816,583548811]')
+# # print(cache.user_id_get('[344816,583548811]'))
+# # print(cache.anvil_user_has_user('[344816,583548811]'))
+# # print(cache.anvil_user_has_user('[344816,583548812]'))
 #
 # r180= cache.info_get('[344816,583548811]')
 # r230=cache.info_get('[344816,588718435]')
 # d180=cache.data_get('[344816,583548811]')
 # d230=cache.data_get('[344816,588718435]')
 # [print(r['client_id']) for r in r180]
-# # [print(r['client_id']) for r in r230]
+# [print(r['client_id']) for r in r230]
 # [print(d['client_id_ref']) for d in d180]
-# #[print(d['client_id_ref']) for d in d230]
-# # cache.get_fd_cached(180,400,120)
+# [print(d['client_id_ref']) for d in d230]
+# print(cache.get_fd_cached('[344816,588718435]',400,1260))

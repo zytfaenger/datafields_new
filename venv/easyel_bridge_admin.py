@@ -147,9 +147,20 @@ def select_field_by_id(f_id):
 def get_field_sub_group_value_for_id(f_id):
     return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 # print(l_get_field_sub_group_value_for_id(230))
+
+@anvil.server.callable
+def get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
+    return fields_functions.l_get_field_sub_group_value_for_id_modern(anvil_user_id,f_id)
+
 @anvil.server.callable
 def get_field_sub_group_for_id(f_id):
     return fields_functions.l_get_field_sub_group_for_id(f_id)
+
+@anvil.server.callable
+def get_field_sub_group_for_id_modern(anvil_user_id, f_id):
+    return fields_functions.l_get_field_sub_group_for_id_modern(anvil_user_id,f_id)
+
+
 
 @anvil.server.callable
 def add_field(
@@ -326,9 +337,6 @@ def ahv_check(avh_string): # checks for validity of number, returns boolean
 
 # ---- field.functions.py --------------
 
-@anvil.server.callable()
-def get_field_sub_group_value_for_id(f_id):
-    return fields_functions.l_get_field_sub_group_value_for_id(f_id)
 
 @anvil.server.callable()
 def ensure_doc(case_id, field_id):

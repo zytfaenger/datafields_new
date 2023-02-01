@@ -1,6 +1,7 @@
 import functions
 import log_functions
 import connections
+import globals as G
 
 
 def l_get_fields_table_columns():
@@ -244,6 +245,32 @@ def l_get_field_sub_group_value_for_id(f_id):
             print('l_get_field_sub_group_value_for_id', sub_group_value)
             return sub_group_value
 
+def l_get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query = """
+            select  
+                field_sub_group_value
+            from
+             fields
+            where
+             field_id=?   
+        """
+        cursor.execute(query, f_id)
+        result = cursor.fetchone()
+        for r in result:
+            sub_group_value = r
+            print('l_get_field_sub_group_value_for_id', sub_group_value)
+            return sub_group_value
+
+
+
+
+
+
+
+
 # print(l_get_field_sub_group_value_for_id(230))
 def l_get_field_sub_group_for_id(f_id):
     azure = connections.Azure()
@@ -265,9 +292,34 @@ def l_get_field_sub_group_for_id(f_id):
         # print('l_get_field_sub_group_for_id', sub_group)
         return sub_group
 
+def l_get_field_sub_group_for_id_modern(anvil_user_id, f_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query = """
+            select  
+                field_sub_group
+            from
+             fields
+            where
+             field_id=?   
+        """
+        cursor.execute(query, f_id)
+        result = cursor.fetchone()
+        sub_group = ""
+        for r in result:
+            sub_group = r
+        # print('l_get_field_sub_group_for_id', sub_group)
+        return sub_group
+
+
+
+
+
+
 
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
-    return log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
+    return log_functions.log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
 
 
 def l_add_field(fd_typ_id,
@@ -330,8 +382,8 @@ def l_update_field(id_to_change,
                    fd_sub_group,
                    fd_sub_group_value):
     # print('l_updateft:',id_to_change,type,description,sequence)
-    current_adminuser = get_user()
-    current_timestamp = make_timestamp()
+    current_adminuser = functions.get_user()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'fields'
     current_table_id = id_to_change
     current_payload = str(l_select_field_by_id(id_to_change))
@@ -343,38 +395,41 @@ def l_update_field(id_to_change,
         current_table_id,
         current_payload)
     # print(previous_log_entry)
-    cursor3 = conn.cursor()
-    query = """   UPDATE 
-                    fields 
-                SET 
-                    field_typ_id=?,
-                    field_name=?,
-                    field_description=?,
-                    field_sequence=?,
-                    field_group=?,
-                    field_group_order=?,
-                    field_sub_group=?,
-                    field_sub_group_value=?,
-                    admin_user=?,
-                    admin_previous_entry=?,
-                    admin_active=?,
-                    admin_timestamp=?
-                WHERE 
-                    field_id=?"""
-    cursor.execute(query, (fd_typ_id,
-                           fd_name,
-                           fd_description,
-                           fd_sequence,
-                           fd_group,
-                           fd_group_order,
-                           fd_sub_group,
-                           fd_sub_group_value,
-                           current_adminuser,
-                           previous_log_entry,
-                           1,
-                           current_timestamp,
-                           id_to_change))
-    cursor3.commit()
+    azure = connections.Azure()
+    with azure:
+        cursor3 = azure.conn.cursor()
+
+        query = """   UPDATE 
+                        fields 
+                    SET 
+                        field_typ_id=?,
+                        field_name=?,
+                        field_description=?,
+                        field_sequence=?,
+                        field_group=?,
+                        field_group_order=?,
+                        field_sub_group=?,
+                        field_sub_group_value=?,
+                        admin_user=?,
+                        admin_previous_entry=?,
+                        admin_active=?,
+                        admin_timestamp=?
+                    WHERE 
+                        field_id=?"""
+        cursor3.execute(query, (fd_typ_id,
+                               fd_name,
+                               fd_description,
+                               fd_sequence,
+                               fd_group,
+                               fd_group_order,
+                               fd_sub_group,
+                               fd_sub_group_value,
+                               current_adminuser,
+                               previous_log_entry,
+                               1,
+                               current_timestamp,
+                               id_to_change))
+        cursor3.commit()
     # (id_to_change, "updated")
 
 
@@ -383,9 +438,9 @@ def l_update_field(id_to_change,
 #l_update_field(160, 170, "Haupttitel 1", None, 1, "Case", 1, "aaaaa")
 
 def l_change_status_field_id(id_to_change, new_status):
-    current_user = get_user()
+    current_user = functions.get_user()
     # print(current_user)
-    current_timestamp = make_timestamp()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'cases'
     current_table_id = id_to_change
     current_payload = str(l_select_field_by_id(id_to_change))
@@ -396,17 +451,19 @@ def l_change_status_field_id(id_to_change, new_status):
         current_table_name,
         current_table_id,
         current_payload)
-
-    cursor.execute("""  UPDATE 
-                            fields
-                        SET 
-                            admin_user=?,
-                            admin_timestamp=?,
-                            admin_previous_entry=?,
-                            admin_active=? 
-                        WHERE field_id=?""",
-                   (current_user,
-                    current_timestamp,
-                    previous_log_entry,
-                    new_status, id_to_change))
-    cursor.commit()
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        cursor.execute("""  UPDATE 
+                                fields
+                            SET 
+                                admin_user=?,
+                                admin_timestamp=?,
+                                admin_previous_entry=?,
+                                admin_active=? 
+                            WHERE field_id=?""",
+                       (current_user,
+                        current_timestamp,
+                        previous_log_entry,
+                        new_status, id_to_change))
+        cursor.commit()

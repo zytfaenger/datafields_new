@@ -185,9 +185,9 @@ def l_update_field_type(id_to_change, type, description,sequence, shadow):
 
 def l_change_status_field_type_by_short_name(type,new_status:int):
     #print(short_name)
-    current_user=get_user()
+    current_user=functions.get_user()
     #print(current_user)
-    current_timestamp = make_timestamp()
+    current_timestamp = functions.make_timestamp()
     current_table_name = 'field_types'
     id_to_change=l_select_field_types_by_shortname(type)['ft_id']
     current_table_id = id_to_change
