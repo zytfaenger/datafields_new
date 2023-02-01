@@ -1,6 +1,7 @@
 import connections
 import functions
 import log_functions
+import globals as G
 
 
 
@@ -320,6 +321,50 @@ def l_add_user  (u_anvil_usr,
     azure = connections.Azure()
     with azure:
         cursor = azure.conn.cursor()
+        query = """insert into 
+                         users (
+                         user_anvil_user, 
+                         anvil_user_1_int, 
+                         anvil_user_2_int,
+                         temp_user,
+                         client_id_reference,
+                         admin_user, 
+                         admin_previous_entry, 
+                         admin_active, 
+                         admin_timestamp 
+                         )
+                         values (?,?,?,?,?,?,?,?,?)"""
+        cursor.execute(query,
+                       (u_anvil_usr,
+                        usr1,
+                        usr2,
+                        tmp_user,
+                        0,
+                        admin_user,
+                        0,
+                        1,
+                        timestamp
+                        ))
+        cursor.commit()
+        cursor.execute("SELECT @@IDENTITY AS ID;")
+        last_id = int(cursor.fetchone()[0])
+        return last_id
+
+# print(l_add_user("[344817,524933171]","Schumacher","Martin","ms@gmail.com"))
+def l_add_user_modern  (u_anvil_usr,
+                        usr_last_name,
+                        usr_first_name,
+                        e_mail,
+                    anvil_user_two_int=True):
+    anvil_user_l = l_get_anvil_user_components_as_list(u_anvil_usr)
+    usr1=anvil_user_l[0]
+    usr2=anvil_user_l[1]
+    admin_user = create_admin_user()
+    timestamp = functions.make_timestamp()
+    tmp_user=create_admin_user()
+    azure = G.cached.conn_get(u_anvil_usr)
+    with azure:
+        cursor = azure.cursor()
         query = """insert into 
                          users (
                          user_anvil_user, 

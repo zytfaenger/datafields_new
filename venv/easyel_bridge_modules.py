@@ -245,9 +245,9 @@ def select_dsd_by_id(dsd_id):
 def select_dsd_by_case(case_id):
     return doc_set_definition.l_select_dsd_by_case(case_id)
 
-@anvil.server.callable
-def select_dsd_id_by_dsd_name(dsd_name:str):
-    return doc_set_definition.l_select_dsd_id_by_dsd_name(dsd_name)
+# @anvil.server.callable
+# def select_dsd_id_by_dsd_name(dsd_name:str):
+#     return doc_set_definition.l_select_dsd_id_by_dsd_name(dsd_name)
 
 @anvil.server.callable
 def select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year):

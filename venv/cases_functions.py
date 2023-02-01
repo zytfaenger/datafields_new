@@ -230,6 +230,50 @@ def l_check_certain_case_exists_for_client_id(client_id, dsd_id):
 
 # print(l_check_certain_case_exists_for_client_id(140,120))
 
+def l_check_certain_case_exists_for_client_id_modern(anvil_user_id, client_id, dsd_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            case_id, 
+                            client_id_ref, 
+                            dsd_reference, 
+                            language_ref, 
+                            user_id,
+                            shadow_case_id,
+                            shadow_case_indicator,
+                            admin_user, 
+                            admin_timestamp, 
+                            admin_previous_entry, 
+                            admin_active  
+                        FROM 
+                            EasyEL.dbo.cases
+                        WHERE
+                            client_id_ref=? and dsd_reference=?"""
+        cursor.execute(query,(client_id,dsd_id))
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        res = cursor.fetchall()
+
+        if res == []:
+            print('Check Case exists: Case does not exist!')
+            return (0,False)
+        else:
+            results = []
+            if len(res) == 1:
+                for row in res:
+                    results.append(dict(zip(columns, row)))
+                if results[0]['dsd_reference']==dsd_id:
+                    print('Check Case exists: Case does exists!')
+                    return (results[0]['case_id'],True)
+
+# print(l_check_certain_case_exists_for_client_id(140,120))
+
+
+
+
+
 
 
 def l_get_cases_for_temp_user_id(temp_user_uuid_string):
@@ -508,7 +552,28 @@ def l_get_shadow_case_id_for_client_id(client_id):
 
 # print(l_get_shadow_case_id_for_client_id(110))
 
+def l_get_shadow_case_id_for_client_id_modern(anvil_user_id, client_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query= """
+            select case_id
+            from
+             EasyEL.dbo.cases
+            where
+             client_id_ref=?  and shadow_case_indicator=?
+        """
+        cursor.execute(query,(client_id,True))
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        else:
+            shadow_case_id = None
+            for r in result:
+                shadow_case_id=r
+            return shadow_case_id
 
+# print(l_get_shadow_case_id_for_client_id(110))
 
 
 def l_get_shadow_case_indicator_for_case_id(ca_id):

@@ -1,6 +1,7 @@
 import connections
 import functions
 import log_functions
+import globals as G
 
 
 def l_get_active_dsd():
@@ -166,37 +167,40 @@ def l_select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year):
         else:
             return result[0]
 
-# print(l_select_the_dsd_by_dsd_name_domain_year("Address","unique",9999))
+#print(l_select_the_dsd_by_dsd_name_domain_year("Address","unique",9999))
 
+def l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id, dsd_name, dsd_domain, dsd_year):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute("""select 
+                            dsd_id
+                        from 
+                            doc_set_def
+                        where 
+                            dsd_name=? and
+                            dsd_domain=? and
+                            dsd_year=?""",
+                       (dsd_name,dsd_domain,dsd_year))
+        result=cursor.fetchone()
+        if result is None:
+            return None
+        else:
+            return result[0]
 
-def l_select_dsd_id_by_dsd_name(dsd_name:str):
-    res=l_select_dsd_by_dsd_name(dsd_name)
-    if res is None:
-        return None
-    elif len(res)==1:
-        return res[0]['dsd_id']
-    else:
-        dsds=[]
-        for dsd in res:
-            dsds.append(dsd['dsd_id'])
-        return dsds
-
-def l_select_the_dsd_id_by_dsd_name_domain_year(dsd_name:str, dsd_domain:str,dsd_year):
-    res=l_select_dsd_by_dsd_name(dsd_name)
-    if res is None:
-        return None
-    elif len(res)==1:
-        return res[0]['dsd_id']
-    else:
-        dsds=[]
-        for dsd in res:
-            dsds.append(dsd['dsd_id'])
-        return  dsds
+#print(l_select_the_dsd_by_dsd_name_domain_year_modern('[344816,583548811]',"Address","unique",9999))
 
 
 
 
-# print(l_select_dsd_id_by_dsd_name('Address'))
+
+
+
+
+
+
+
+
 
 
 

@@ -100,6 +100,41 @@ def l_get_active_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
         return res
 #print(l_get_active_cdm_entries_by_case_id_and_dsc_id(720,1960))
 
+def l_get_active_cdm_entries_by_case_id_and_dsc_id_modern(anvil_user_id, case_id, dsc_id_ref):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            cdm_id, 
+                            user_id_reference, 
+                            case_id_reference,
+                            EasyEL.dbo.cases.client_id_ref,
+                            dsc_reference, 
+                            payload_text, 
+                            payload_number, 
+                            payload_boolean, 
+                            client_data_main.admin_user, 
+                            client_data_main.admin_timestamp, 
+                            client_data_main.admin_previous_entry, 
+                            client_data_main.admin_active 
+                        FROM client_data_main
+                        join EasyEL.dbo.cases on EasyEL.dbo.cases.case_id = client_data_main.case_id_reference
+                        WHERE case_id_reference=? AND dsc_reference=? and client_data_main.admin_active=?
+                        """
+        cursor.execute(query,(case_id,dsc_id_ref,True))
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if results==[]:
+            return None
+        else:
+            res=[]
+        for row in results:
+            res.append(dict(zip(columns, row)))
+        return res
+
+
+
 def l_get_all_cdm_entries_by_case_id_and_dsc_id(case_id, dsc_id_ref):
     azure = connections.Azure()
     with azure:
