@@ -402,6 +402,12 @@ def get_cases_for_a_client_id(client_id):
     return cases_functions.l_get_cases_for_a_client_id(client_id)
 
 @anvil.server.callable()
+def get_cases_for_a_client_id_modern(anvil_user_id, client_id):
+    return cases_functions.l_get_cases_for_a_client_id_modern(anvil_user_id,client_id)
+
+
+
+@anvil.server.callable()
 def check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):
     return cases_functions.l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id)
 
@@ -483,6 +489,16 @@ def get_client_list(anvil_user_id):
     return juno.l_get_client_list(anvil_user_id)
 @anvil.server.callable()
 def add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
-    return juno.l_add_client_with_cases(anvil_user_txt, client_desc, dsd,domain,year)
+    return juno.l_add_client_with_cases(anvil_user_txt, client_desc, dsd, domain, year)
+
+
+@anvil.server.callable()
+def get_links_for_a_client(anvil_user_id, client_id):
+
+
+    list= [{'dsd_name':'address','name':'Franz','town':'Luzern'},
+           {'dsd_name':'address','name':'Max','town':'Zürich'},
+           {'dsd_name':'address','name':'Peter','town':'Bern'}]
+    return list
 
 anvil.server.wait_forever()

@@ -252,8 +252,8 @@ class cache_obj():
             return None
 
 # #sequence is important
-# #create object
-# cache=cache_obj()
+#create object
+#cache=cache_obj()
 # #make connections first
 # cache.conn_add('[344816,583548811]')
 # cache.conn_add('[344816,588718435]')
@@ -263,7 +263,7 @@ class cache_obj():
 # cache.make_user_cache()
 # #print(cache.user_id)
 # #then get existing_data
-# cache.data_add('[344816,583548811]')
+#cache.data_add('[344816,583548811]')
 # cache.data_add('[344816,588718435]')
 # cache.info_add('[344816,583548811]',1)
 # cache.info_add('[344816,588718435]',1)

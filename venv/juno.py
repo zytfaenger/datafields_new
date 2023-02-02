@@ -209,6 +209,7 @@ def l_get_client_list(anvil_user_id):
     return client_list
 
 def l_add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
+
     check_no_duplicate_clients=True #can be implemented later
     if check_no_duplicate_clients is True:
         user_id = users.l_get_userid_for_anvil_user(anvil_user_txt)
@@ -219,10 +220,11 @@ def l_add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
     if client_id is None:
         case_result=(None,False)
     else:
-        dsd_there=ensure_dsd(dsd,domain,year)
+
+        dsd_there=ensure_dsd(anvil_user_txt,dsd,domain,year)
         if dsd_there[1] is True:
             dsd_id=dsd_there[0]
-        case_result = ensure_case(dsd_id,client_id,user_id)
+        case_result = ensure_case(anvil_user_txt,dsd_id,client_id,user_id)
     return case_result
 #print(l_get_client_list('[344816,524933170]'))
 
