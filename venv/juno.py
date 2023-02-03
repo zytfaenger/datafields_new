@@ -14,7 +14,7 @@ def ensure_user(anvil_user_id_txt,anv_usr_email):
         return (user_id,True)
 
     else:
-        user_id=users.l_add_user_modern(anvil_user_id_txt,"Eingeben!","Eingeben!",anv_usr_email)
+        user_id=users.l_add_user_modern(anvil_user_id_txt,"Eingeben!","Eingeben!","Eingeben!",anv_usr_email)
         if type(user_id) is int:
             print('ensure_user_id',user_id,"gesetzt")
             G.cached.user_id_add_direct(anvil_user_id_txt, user_id)
@@ -22,7 +22,7 @@ def ensure_user(anvil_user_id_txt,anv_usr_email):
         else:
             return (user_id, False)
 
-def ensure_client(anvil_user_id, user_id,client_desc="offen"):
+def ensure_client(anvil_user_id, user_id,client_desc="is User"):
     client_id=clients.l_get_the_client_id_of_a_user_id_modern(anvil_user_id,user_id)
     if client_id is None:
         client_id=clients.l_add_client_to_clients_modern(anvil_user_id,user_ref=user_id, client_is_user=True, client_name=client_desc)

@@ -187,12 +187,6 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
 
 
 
-
-
-
-
-
-
 def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
     usr_id=users.l_get_userid_for_anvil_user(anvil_usr_id)
     client_id=clients.l_get_the_client_id_of_a_user_id(usr_id)
@@ -395,6 +389,31 @@ def l_get_cases_for_temp_user_id_and_DSD(temp_user_uuid_string,dsd_id):
             for row in cursor.fetchall():
                 results.append(dict(zip(columns, row)))
             return results
+
+# print(l_get_cases_for_temp_user_id_and_DSD('142452F6-9685-11ED-B4C0-ACDE48001122',120)[0]['case_id'])
+
+
+def l_get_case_for_anvil_user_id_and_DSD_modern(anvil_user_id,client_id, dsd_id):
+
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            case_id
+                        FROM 
+                            EasyEL.dbo.cases
+                        WHERE
+                            client_id_ref=? AND dsd_reference=? """
+
+        cursor.execute(query,(client_id,dsd_id))
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchone()
+        if results is None:
+            return None
+        else:
+            return results[0]
 
 # print(l_get_cases_for_temp_user_id_and_DSD('142452F6-9685-11ED-B4C0-ACDE48001122',120)[0]['case_id'])
 
@@ -655,7 +674,7 @@ def l_get_shadow_case_indicator_for_case_id(ca_id):
 def l_get_shadow_case_indicator_for_case_id_modern(anvil_user_id,ca_id):
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query= """
             select shadow_case_indicator
             from

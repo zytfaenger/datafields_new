@@ -16,6 +16,9 @@ def l_get_user_table_columns():
                             anvil_user_1_int,
                             temp_user,
                             client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -57,7 +60,10 @@ def l_get_active_users():
                             anvil_user_1_int,
                             anvil_user_1_int,  
                             temp_user,
-                            client_id_reference,                
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,               
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -86,7 +92,10 @@ def l_get_active_users():
                             anvil_user_1_int,
                             anvil_user_1_int,  
                             temp_user,
-                            client_id_reference,                
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,              
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -123,6 +132,9 @@ def l_get_all_users():
                             anvil_user_1_int,   
                             temp_user,
                             client_id_reference,                         
+                            user_name,
+                            user_firstname,
+                            user_town,
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -150,7 +162,10 @@ def l_get_user_by_id(usr_id):
                             anvil_user_1_int,
                             anvil_user_2_int,
                             temp_user,
-                            client_id_reference,                    
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                                                
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -191,7 +206,10 @@ def l_get_user_by_client_id(client_id):
                             anvil_user_1_int,
                             anvil_user_2_int,
                             temp_user,
-                            client_id_reference,                    
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                                                
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -227,6 +245,9 @@ def l_get_userid_for_anvil_user(anvil_user_id:str):
                             anvil_user_2_int,
                             temp_user,
                             client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                            
                             admin_user,
                             admin_previous_entry,
                             admin_active,
@@ -248,6 +269,47 @@ def l_get_userid_for_anvil_user(anvil_user_id:str):
 
 #print(l_get_userid_for_anvil_user('[344816,588453780]'))
 
+def l_get_user_record_for_anvil_user_modern(anvil_user_id:str):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute("""SELECT
+                            user_id,
+                            user_anvil_user,
+                            anvil_user_1_int,
+                            anvil_user_2_int,
+                            temp_user,
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                            
+                            admin_user,
+                            admin_previous_entry,
+                            admin_active,
+                            admin_timestamp
+                        FROM
+                            users
+                        where
+                            user_anvil_user=?""", anvil_user_id)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchone()
+        if results is None:
+            return None
+        else:
+            res=[]
+            res.append(dict(zip(columns, results)))
+            # print(results[0])
+            return res[0]
+
+
+
+
+
+
+
+
+
 
 def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
     azure = connections.Azure()
@@ -259,7 +321,10 @@ def l_get_userid_for_temp_user_uuid(temp_usr_uuid:str):
                             anvil_user_1_int,
                             anvil_user_2_int,
                             temp_user,
-                            client_id_reference,                    
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                   
                             admin_user, 
                             admin_previous_entry, 
                             admin_active, 
@@ -310,6 +375,7 @@ def create_admin_user():
 def l_add_user  (u_anvil_usr,
                 usr_last_name,
                 usr_first_name,
+                usr_town,
                 e_mail,
                 anvil_user_two_int=True):
     anvil_user_l = l_get_anvil_user_components_as_list(u_anvil_usr)
@@ -328,18 +394,24 @@ def l_add_user  (u_anvil_usr,
                          anvil_user_2_int,
                          temp_user,
                          client_id_reference,
+                         user_name,
+                         user_firstname,
+                         user_town,
                          admin_user, 
                          admin_previous_entry, 
                          admin_active, 
                          admin_timestamp 
                          )
-                         values (?,?,?,?,?,?,?,?,?)"""
+                         values (?,?,?,?,?,?,?,?,?,?,?,?)"""
         cursor.execute(query,
                        (u_anvil_usr,
                         usr1,
                         usr2,
                         tmp_user,
                         0,
+                        usr_last_name,
+                        usr_first_name,
+                        usr_town,
                         admin_user,
                         0,
                         1,
@@ -354,6 +426,7 @@ def l_add_user  (u_anvil_usr,
 def l_add_user_modern  (u_anvil_usr,
                         usr_last_name,
                         usr_first_name,
+                        usr_town,
                         e_mail,
                     anvil_user_two_int=True):
     anvil_user_l = l_get_anvil_user_components_as_list(u_anvil_usr)
@@ -372,18 +445,24 @@ def l_add_user_modern  (u_anvil_usr,
                          anvil_user_2_int,
                          temp_user,
                          client_id_reference,
+                         user_name,
+                         user_firstname,
+                         user_town,
                          admin_user, 
                          admin_previous_entry, 
                          admin_active, 
                          admin_timestamp 
                          )
-                         values (?,?,?,?,?,?,?,?,?)"""
+                         values (?,?,?,?,?,?,?,?,?,?,?,?)"""
         cursor.execute(query,
                        (u_anvil_usr,
                         usr1,
                         usr2,
                         tmp_user,
                         0,
+                        usr_last_name,
+                        usr_first_name,
+                        usr_town,
                         admin_user,
                         0,
                         1,

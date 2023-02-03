@@ -76,7 +76,7 @@ def l_get_label_by_id(lang_id,field_id):
 def l_get_label_by_id_modern(anvil_user_id, lang_id,field_id):
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor2 = azure.cursor()
+        cursor3 = azure.cursor()
         query="""
                 select 
                  field_desc_label
@@ -86,13 +86,13 @@ def l_get_label_by_id_modern(anvil_user_id, lang_id,field_id):
                  language_id_reference=? AND field_id_reference=?   
             """
         #print(query)
-        cursor2.execute(query,(lang_id,field_id))
-        label = cursor2.fetchone()
+        cursor3.execute(query,(lang_id,field_id))
+        label = cursor3.fetchone()
         if label is None:
-            cursor2.close()
+            cursor3.close()
             return None
         else:
-            cursor2.close()
+            cursor3.close()
             return label[0]
 
 

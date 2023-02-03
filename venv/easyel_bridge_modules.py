@@ -1,4 +1,4 @@
-import anvil.server
+
 import anvil.tables
 import PLZ
 import cases_functions
@@ -14,7 +14,6 @@ import juno
 import language_functions
 import log_functions
 import users
-import cache
 import globals as G
 
 # anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules PDS v1
@@ -57,7 +56,7 @@ def select_language_by_id(lang_id):
 
 @anvil.server.callable()
 def select_language_by_id_modern(anvil_user_id, lang_id):
-    return language_functions.l_select_language_by_id(anvil_user_id, lang_id)
+    return language_functions.l_select_language_by_id_modern(anvil_user_id, lang_id)
 
 @anvil.server.callable()
 def select_language_by_case(case_id):
@@ -342,7 +341,7 @@ def change_status_dsc_by_id(id_to_change: int, new_status: int):
 
 @anvil.server.callable
 def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean):
-    client_data_main.l_set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
+    return client_data_main.l_set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 
 @anvil.server.callable
@@ -390,6 +389,9 @@ def get_cases_for_userid(anvil_usr_id):
     return cases_functions.l_get_cases_for_userid(anvil_usr_id)
 
 @anvil.server.callable()
+def get_case_for_anvil_user_id_and_DSD_modern(anvil_user_id,client_id, dsd_id):
+    return cases_functions.l_get_case_for_anvil_user_id_and_DSD_modern(anvil_user_id, client_id, dsd_id)
+@anvil.server.callable()
 def get_cases_for_temp_user_id(tmp_usr_uuid_str):
     return cases_functions.l_get_cases_for_temp_user_id(tmp_usr_uuid_str)
 
@@ -427,6 +429,17 @@ def get_anvil_user_components_as_list(anvil_user):
     return users.l_get_anvil_user_components_as_list(anvil_user)
 
 @anvil.server.callable()
+def get_userid_for_anvil_user(anvil_user_id):
+    return users.l_get_userid_for_anvil_user(anvil_user_id)
+
+@anvil.server.callable()
+def get_user_record_for_anvil_user_modern(anvil_user_id:str):
+    return users.l_get_user_record_for_anvil_user_modern(anvil_user_id)
+
+
+
+
+@anvil.server.callable()
 def get_new_temp_user_id(anvil_usr):
     print('get_new_temp_user_id:', anvil_usr)
     return users.l_get_new_temp_user_id(anvil_usr)
@@ -435,11 +448,14 @@ def get_new_temp_user_id(anvil_usr):
 def add_user  (u_anvil_usr,
                 usr_last_name,
                 usr_first_name,
+                usr_town,
                 e_mail):
-    return users.l_add_user (u_anvil_usr,
-                   usr_last_name,
-                   usr_first_name,
-                   e_mail,anvil_user_two_int=True)
+    return users.l_add_user (   u_anvil_usr,
+                                usr_last_name,
+                                usr_first_name,
+                                usr_town,
+                                e_mail,
+                                anvil_user_two_int=True)
 
 # ---- clients.functions.py --------------
 
@@ -483,6 +499,7 @@ def register_and_setup_user(anvil_user_id,language_id=1):
 @anvil.server.callable()
 def update_data_cache(anvil_user_id):
     G.cached.data_add(anvil_user_id)
+    G.cached.info_add(anvil_user_id)
 
 @anvil.server.callable()
 def get_client_list(anvil_user_id):
