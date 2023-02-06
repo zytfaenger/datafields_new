@@ -230,5 +230,12 @@ def l_add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
 
 #print(l_ensure_user_context('[344816,581704467]','fs@msfp.ch',"Address","unique",9999))
 
+
+
+
+
+
+
+
 def get_my_links(client_id):
     pass

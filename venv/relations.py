@@ -1,7 +1,10 @@
+import cases_functions
+import clients
 import connections
 import functions
 import users
 import log_functions
+import globals as G
 
 def l_get_relations_table_columns():
     azure = connections.Azure()
@@ -167,25 +170,28 @@ def l_get_relations_by_giver_uuid(giver_uuid):
 # print('Giver')
 # [print(r) for r in l_get_relations_by_giver_uuid('5C0B51FE-978F-11ED-9B62-ACDE48001122')]
 
-def l_get_relations_by_receiver_uuid(receiver_uuid):
-    azure = connections.Azure()
+def l_get_relations_by_receiver_uuid_modern(anvil_user_id, receiver_uuid):
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
-        query: str = """SELECT 
-                            relations_id, 
-                            giver_uuid, 
-                            case_id_given, 
-                            shd_case_id_given, 
-                            receiver_uuid, 
-                            type_of_access, 
-                            admin_user, 
-                            admin_timestamp, 
-                            admin_previous_entry, 
-                            admin_active                       
-                        FROM 
-                            relations
-                        WHERE 
-                            receiver_uuid=?"""
+        cursor = azure.cursor()
+        query: str = """select
+                            giver_uuid,
+                            Cl1.client_name as 'giver',
+                            relations.case_id_given,
+                            dsd1.dsd_name as 'form',
+                            shd_case_id_given,
+                            dsd2.dsd_name as 'shadow-form',
+                            receiver_uuid,
+                            Cl2.client_name as 'receiver',
+                            relations.type_of_access
+                            from relations
+                            join EasyEL.dbo.cases as ca1 on ca1.case_id=case_id_given
+                            join EasyEL.dbo.cases as ca2 on ca2.case_id=shd_case_id_given
+                            join EasyEL.dbo.clients as  Cl1 on Cl1.client_relation_uuid=giver_uuid
+                            join EasyEL.dbo.clients as  Cl2 on Cl2.client_relation_uuid=receiver_uuid
+                            join EasyEL.dbo.doc_set_def as dsd1 on dsd1.dsd_id=ca1.dsd_reference
+                            join EasyEL.dbo.doc_set_def as dsd2 on dsd2.dsd_id=ca2.dsd_reference
+                            where receiver_uuid=?"""
         cursor.execute(query,receiver_uuid)
         columns = [column[0] for column in cursor.description]
         # print(columns)
@@ -193,9 +199,9 @@ def l_get_relations_by_receiver_uuid(receiver_uuid):
         res=[]
         [res.append(dict(zip(columns, row))) for row in results]
         return res
-
-# print('Receiver')
-# [print(r) for r in l_get_relations_by_receiver_uuid('14FBABE8-978E-11ED-9B62-ACDE48001122')]
+#
+# G.l_register_and_setup_user('[344816,583548811]')
+# [print(r) for r in  l_get_relations_by_receiver_uuid_modern('[344816,583548811]', '7712AFE8-A625-11ED-9D26-ACDE48001122')]
 
 def l_get_relations_by_case_id_given(case_id):
     azure = connections.Azure()
@@ -448,8 +454,52 @@ def l_update_relation(admin_user, relation_id_to_change='=', giver_uuid='=', rec
             cursor3.commit()
 
 
+
 #l_update_relation('1399C078-6C0F-11ED-B0BC-ACDE48001122',1,"=","=",1,1)
 
+def l_change_existing_relationsship_uuid_modern(anvil_user_id, admin_user, existing_client_relation_uuid, new_client_relation_uuid):
+    current_admin_user = admin_user
+    current_timestamp = functions.make_timestamp()
+    current_table_name = 'relations - update relationsship uuid'
+    current_table_id = 9999 #potentially affects many
+    current_payload_text = ("""change from existing_client_relation_uuid: {} to new_client_relation_uuid: {}""").format(existing_client_relation_uuid,new_client_relation_uuid)
+    current_payload = current_payload_text
+    # print(current_admin_user,current_timestamp,current_table_name,current_table_id,current_payload)
+    previous_log_entry = add_log_entry(current_admin_user,
+                                       current_timestamp,
+                                       current_table_name,
+                                       current_table_id,
+                                       current_payload)
+    # print(previous_log_entry)
+
+    # update givers...
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor3 = azure.cursor()
+        query = """   UPDATE 
+                        relations 
+                    SET 
+                        giver_uuid=? 
+                    WHERE 
+                        EasyEL.dbo.relations.giver_uuid=?"""
+        cursor3.execute(query, (new_client_relation_uuid,existing_client_relation_uuid))
+        cursor3.commit()
+
+
+    # update receivers...
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor3 = azure.cursor()
+        query = """   UPDATE 
+                        relations 
+                    SET 
+                        receiver_uuid=? 
+                    WHERE 
+                        EasyEL.dbo.relations.receiver_uuid=?"""
+        cursor3.execute(query, (new_client_relation_uuid,existing_client_relation_uuid))
+        cursor3.commit()
+
+#l_change_existing_relationsship_uuid('[344816,524933170]', '1399C078-6C0F-11ED-B0BC-ACDE48001122', 'E4A65D6E-9583-11ED-B0DA-ACDE48001122', 'A2166484-A605-11ED-A73B-ACDE48001122')
 
 def l_change_status_relation(admin_user_id, relations_id_to_change, new_status):
     current_admin_user = admin_user_id
@@ -484,3 +534,18 @@ def l_change_status_relation(admin_user_id, relations_id_to_change, new_status):
         cursor.commit()
 #l_change_status_relation('1399C078-6C0F-11ED-B0BC-ACDE48001122',1,True)
 
+def l_get_links_for_a_client_modern (anvil_user_id, client_id):
+    client_record = clients.l_get_client_by_id_modern(anvil_user_id,client_id)
+    client_uuid=client_record['client_relation_uuid']
+    link_data=l_get_relations_by_receiver_uuid_modern(anvil_user_id,client_uuid)
+    list=[]
+    for l in link_data:
+        dict={}
+        dict['case_id'] = l['case_id_given']
+        dict['shadow_case_id']=l['shd_case_id_given']
+        dict['type_of_access']=l['type_of_access']
+        dict['dsd_name']=l['form']
+        dict['name']=cases_functions.l_get_case_owner_string_modern(anvil_user_id,l['case_id_given'])
+        dict['town']='none'
+        list.append(dict)
+    return list

@@ -1,6 +1,4 @@
-
 import anvil.tables
-import PLZ
 import cases_functions
 import client_data_main
 import clients
@@ -13,7 +11,9 @@ import functions
 import juno
 import language_functions
 import log_functions
+import relations
 import users
+import PLZ
 import globals as G
 
 # anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules PDS v1
@@ -22,7 +22,8 @@ anvil.server.connect('server_ORIZJ3HLOBXXSFAX5HN3IE5Z-WCKU3CRQDF4JNFDC')  #modul
 
 #print(G.cached.info_get(230))
 
-# -------- Logging----------#
+# -------- Logging----------#')  #modules PDS v2
+
 
 
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
@@ -471,6 +472,17 @@ def update_client(client_id_to_change, user_ref, client_is_user,  name):
 def get_client_by_id(client_id):
     return clients.l_get_client_by_id(client_id)
 
+@anvil.server.callable()
+def get_client_by_id_modern(anvil_user_id, client_id):
+    return clients.l_get_client_by_id_modern(anvil_user_id,client_id)
+
+@anvil.server.callable()
+def ensure_link_code_client(anvil_user_id, client_id):
+    return clients.l_ensure_link_code_client_modern(anvil_user_id, client_id)
+
+@anvil.server.callable()
+def change_client_relation_uuid_modern(anvil_user_id, client_id, user_id):
+    return clients.l_change_client_relation_uuid_modern(anvil_user_id, client_id, user_id)
 # ---- dokument functions.py --------------
 
 @anvil.server.callable()
@@ -483,19 +495,21 @@ def ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_ye
     print(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year)
     return juno.l_ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_year)
 
+# ---- relations functions.py --------------
+
+@anvil.server.callable()
+def get_relations_by_receiver_uuid_modern(anvil_user_id, receiver_uuid):
+    return relations.l_get_relations_by_receiver_uuid_modern(anvil_user_id,receiver_uuid)
+
+
+
+
 
 # ---- juno.functions.py --------------
 
 @anvil.server.callable()
 def register_and_setup_user(anvil_user_id,language_id=1):
-    G.cached.conn_add(anvil_user_id) #must be first otherwise user_cache is not set
-    G.cached.user_id_add(anvil_user_id)
-    if len(G.cached.user_id)==1:
-        G.cached.make_user_cache()
-    G.cached.data_add(anvil_user_id)
-    G.cached.info_add(anvil_user_id,language_id)
-    # if G.cached.anvil_user_has_user(anvil_user_id) is False:
-    #     G.register_user_id(anvil_user_id)
+    return G.l_register_and_setup_user(anvil_user_id,language_id)
 @anvil.server.callable()
 def update_data_cache(anvil_user_id):
     G.cached.data_add(anvil_user_id)
@@ -511,11 +525,7 @@ def add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
 
 @anvil.server.callable()
 def get_links_for_a_client(anvil_user_id, client_id):
+    return relations.l_get_links_for_a_client_modern(anvil_user_id, client_id)
 
-
-    list= [{'dsd_name':'address','name':'Franz','town':'Luzern'},
-           {'dsd_name':'address','name':'Max','town':'Zürich'},
-           {'dsd_name':'address','name':'Peter','town':'Bern'}]
-    return list
 
 anvil.server.wait_forever()

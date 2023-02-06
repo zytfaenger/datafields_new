@@ -2,6 +2,7 @@ import uuid
 import connections
 import functions
 import log_functions
+import globals as G
 
 # conn = connections.get_connection()
 #
@@ -242,16 +243,17 @@ def create_admin_user():
     return functions.make_uuid()
 
 
-def l_add_client_uuid(admin_user_id, client_id):
+def l_add_client_uuid(anvil_user_id, admin_user_id, client_id,comment):
     new_client_uuid = functions.make_uuid()
     admin_user = admin_user_id
     timestamp = functions.make_timestamp()
-    azure = connections.Azure()
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor=azure.conn.cursor()
+        cursor=azure.cursor()
         query = """insert into client_uuid (
                          client_id,
                          client_uuid,
+                         comment,
                          admin_user, 
                          admin_previous_entry, 
                          admin_active, 
@@ -261,6 +263,7 @@ def l_add_client_uuid(admin_user_id, client_id):
         cursor.execute(query,
                        (client_id,
                         new_client_uuid,
+                        comment,
                         admin_user,
                         0,
                         1,

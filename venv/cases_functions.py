@@ -906,3 +906,64 @@ def l_change_status_case_by_id(ca_to_change:int,new_status:int):
                             WHERE case_id=?""",
                            (current_user,current_timestamp,previous_log_entry,new_status,ca_to_change))
         cursor.commit()
+
+
+def l_get_case_owner_string_modern (anvil_user_id,case_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """select
+                case_id_reference,
+                dsc_reference,
+                payload_text,
+                payload_number,
+                payload_boolean,
+                f.field_id,
+                f.field_name,
+                f.field_description
+            
+            from client_data_main as cdm
+            join doc_set_comp as dsc on dsc.dsc_id=cdm.dsc_reference
+            join fields as f on f.field_id=dsc.field_id_reference
+            
+            where case_id_reference=? and (f.field_id=? OR f.field_id=? OR f.field_id=?)"""
+
+        cursor.execute(query, (case_id,
+                       110, #Name
+                       120, #Vorname
+                       170) #Town)
+                       )
+
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if results == []:
+            return [None]
+        else:
+            res = []
+            for row in results:
+                res.append(dict(zip(columns, row)))
+        address = ("{}, {}, {}").format(res[0]['payload_text'],res[1]['payload_text'],res[2]['payload_text'])
+        return address
+
+
+G.l_register_and_setup_user('[344816,583548811]')
+a=l_get_case_owner_string_modern ('[344816,583548811]',200)
+print(a)
+
+query="""select
+            case_id_reference,
+            dsc_reference,
+            payload_text,
+            payload_number,
+            payload_boolean,
+            f.field_id,
+            f.field_name,
+            f.field_description
+            
+            from client_data_main as cdm
+            join doc_set_comp as dsc on dsc.dsc_id=cdm.dsc_reference
+            join fields as f on f.field_id=dsc.field_id_reference
+            
+            where case_id_reference='200' and (f.field_id=110 OR f.field_id=120 OR f.field_id=170)"""
