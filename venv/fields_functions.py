@@ -242,7 +242,7 @@ def l_get_field_sub_group_value_for_id(f_id):
         result = cursor.fetchone()
         for r in result:
             sub_group_value = r
-            print('l_get_field_sub_group_value_for_id', sub_group_value)
+            #print('l_get_field_sub_group_value_for_id', sub_group_value)
             return sub_group_value
 
 def l_get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
@@ -261,7 +261,7 @@ def l_get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
         result = cursor.fetchone()
         for r in result:
             sub_group_value = r
-            print('l_get_field_sub_group_value_for_id', sub_group_value)
+            #print('l_get_field_sub_group_value_for_id', sub_group_value)
             return sub_group_value
 
 

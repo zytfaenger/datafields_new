@@ -590,7 +590,8 @@ def l_get_shadow_case_id_for_case_id_modern(anvil_user_id, ca_id):
                 shadow_case_id=r
             return shadow_case_id
 
-# print(l_get_shadow_case_id_for_case_id(200))
+# G.l_register_and_setup_user('[344816,583548811]')
+# print(l_get_shadow_case_id_for_case_id(390))  #return 0 for shadow_case
 
 
 
@@ -948,22 +949,22 @@ def l_get_case_owner_string_modern (anvil_user_id,case_id):
         return address
 
 
-G.l_register_and_setup_user('[344816,583548811]')
-a=l_get_case_owner_string_modern ('[344816,583548811]',200)
-print(a)
+# G.l_register_and_setup_user('[344816,583548811]')
+# a=l_get_case_owner_string_modern ('[344816,583548811]',200)
+# print(a)
 
-query="""select
-            case_id_reference,
-            dsc_reference,
-            payload_text,
-            payload_number,
-            payload_boolean,
-            f.field_id,
-            f.field_name,
-            f.field_description
-            
-            from client_data_main as cdm
-            join doc_set_comp as dsc on dsc.dsc_id=cdm.dsc_reference
-            join fields as f on f.field_id=dsc.field_id_reference
-            
-            where case_id_reference='200' and (f.field_id=110 OR f.field_id=120 OR f.field_id=170)"""
+# query="""select
+#             case_id_reference,
+#             dsc_reference,
+#             payload_text,
+#             payload_number,
+#             payload_boolean,
+#             f.field_id,
+#             f.field_name,
+#             f.field_description
+#
+#             from client_data_main as cdm
+#             join doc_set_comp as dsc on dsc.dsc_id=cdm.dsc_reference
+#             join fields as f on f.field_id=dsc.field_id_reference
+#
+#             where case_id_reference='200' and (f.field_id=110 OR f.field_id=120 OR f.field_id=170)"""

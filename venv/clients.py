@@ -573,3 +573,46 @@ def l_change_client_relation_uuid_modern(anvil_user_id, client_id, user_id):
         cursor.commit()
     return str(new_client_relation_uuid)
 #l_change_client_relation_uuid('[344816,524933170]', 210, 100)
+
+def l_get_client_string_from_client_id(link_id):
+    azure = connections.Azure()
+    with azure:
+        cursor = azure.conn.cursor()
+        query: str = """select 
+                            cdm.payload_text,
+                            f1.field_id
+                            from client_data_main as cdm
+                            join doc_set_comp as dsc on dsc.dsc_id = cdm.dsc_reference
+                            join doc_set_def as dsd on dsd.dsd_id=dsc.dsd_reference
+                            join fields as f1 on f1.field_id=dsc.field_id_reference
+                            join EasyEL.dbo.cases as ca on ca.case_id = cdm.case_id_reference
+                            join clients on client_id = ca.client_id_ref
+                        where 
+                                dsd.dsd_id=? and 
+                                (f1.field_id=? or f1.field_id=? or f1.field_id=? or f1.field_id=? or f1.field_id=?) 
+                                and clients.client_relation_uuid=?"""
+
+        cursor.execute(query, (130,  #dsd für Address
+                               110,  # Name
+                               120,  # Vorname
+                               140,  # Strasse
+                               130,  # PLZ
+                               170,  # Town
+                                link_id) )
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if results == []:
+            return [None]
+        else:
+            res = []
+            for row in results:
+                res.append(dict(zip(columns, row)))
+            info={}
+            for r in res:
+                info[r['field_id']]=r['payload_text']
+        address = ("{}, {}, {}, {}, {},").format(info[110], info[120], info[140],info[130],info[170])
+        return address
+
+#print(l_get_client_string_from_client_id('BE979A7A-A6C2-11ED-8FF5-ACDE48001122'))

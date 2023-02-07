@@ -366,12 +366,12 @@ def l_get_relation_type_of_acces(relations_id):
 def add_log_entry(user, current_timestamp, table_name, table_id, payload):
     return log_functions.log_add_log_entry(user, current_timestamp, table_name, table_id, payload)
 
-def l_add_relation_to_relations  (admin_user,giver_uuid,case_given,shd_case_given,receiver_uuid,access_type):
-    current_admin_user=admin_user
+def l_add_relation_to_relations_modern  (anvil_user_id,giver_uuid,case_given,shd_case_given,receiver_uuid,access_type):
+    current_admin_user=users.l_get_user_record_for_anvil_user_modern(anvil_user_id)['admin_user']
     timestamp = functions.make_timestamp()
-    azure = connections.Azure()
+    azure = G.cached.conn_get(anvil_user_id)
     with azure:
-        cursor = azure.conn.cursor()
+        cursor = azure.cursor()
         query = """insert into 
                      relations (
                         giver_uuid,
@@ -546,6 +546,5 @@ def l_get_links_for_a_client_modern (anvil_user_id, client_id):
         dict['type_of_access']=l['type_of_access']
         dict['dsd_name']=l['form']
         dict['name']=cases_functions.l_get_case_owner_string_modern(anvil_user_id,l['case_id_given'])
-        dict['town']='none'
         list.append(dict)
     return list

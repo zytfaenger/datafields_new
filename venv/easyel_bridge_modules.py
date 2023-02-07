@@ -347,12 +347,12 @@ def set_fd(anvil_user_id_txt, case_id, field_id, pl_text, pl_number, pl_boolean)
 
 @anvil.server.callable
 def get_fd(anvil_user_id, case_id, field_id):  # in Client_data_main
-    print('get_fd_debug:',anvil_user_id,case_id,field_id)
+    #print('get_fd_debug:',anvil_user_id,case_id,field_id)
     if type(anvil_user_id) is list:
         anvil_user_id=str(anvil_user_id)
-        print('type is now:', type(anvil_user_id) )
+        #print('type is now:', type(anvil_user_id) )
     res=G.cached.get_fd_cached(anvil_user_id,case_id,field_id)
-    print('get_fd_res:',res)
+    #print('get_fd_res:',res)
     if res is None:
         return client_data_main.l_get_fd(anvil_user_id, case_id, field_id)
     else:
@@ -483,6 +483,17 @@ def ensure_link_code_client(anvil_user_id, client_id):
 @anvil.server.callable()
 def change_client_relation_uuid_modern(anvil_user_id, client_id, user_id):
     return clients.l_change_client_relation_uuid_modern(anvil_user_id, client_id, user_id)
+
+@anvil.server.callable()
+def get_client_string_from_client_id(link_id):
+    return clients.l_get_client_string_from_client_id(link_id)
+
+
+
+
+
+
+
 # ---- dokument functions.py --------------
 
 @anvil.server.callable()
@@ -501,7 +512,9 @@ def ensure_user_context(anvil_user_text,anv_usr_email,dsd_name,dsd_domain,dsd_ye
 def get_relations_by_receiver_uuid_modern(anvil_user_id, receiver_uuid):
     return relations.l_get_relations_by_receiver_uuid_modern(anvil_user_id,receiver_uuid)
 
-
+@anvil.server.callable()
+def add_relation_to_relations_modern  (anvil_user_id,giver_uuid,case_given,shd_case_given,receiver_uuid,access_type):
+    return relations.l_add_relation_to_relations_modern(anvil_user_id, giver_uuid, case_given, shd_case_given, receiver_uuid,access_type)
 
 
 
