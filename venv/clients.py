@@ -604,7 +604,7 @@ def l_get_client_string_from_client_id(link_id):
         # print(columns)
         results = cursor.fetchall()
         if results == []:
-            return [None]
+            return None
         else:
             res = []
             for row in results:
