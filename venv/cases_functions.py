@@ -181,7 +181,9 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
             for row in results:
                 res.append(dict(zip(columns, row)))
             return res
-# a=l_get_cases_for_a_client_id(210)
+
+# G.l_register_and_setup_user('[344816,583548811]',1) #Louis
+# a=l_get_cases_for_a_client_id_modern('[344816,583548811]',210)
 # for i in range(0,len(a)):
 #     print(a[i])
 
