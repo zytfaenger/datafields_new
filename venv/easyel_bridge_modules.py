@@ -242,6 +242,11 @@ def select_dsd_by_id(dsd_id):
     return doc_set_definition.l_select_dsd_by_id(dsd_id)
 
 @anvil.server.callable
+def select_dsd_by_id_modern(anvil_user_id,dsd_id):
+    return doc_set_definition.l_select_dsd_by_id_modern(anvil_user_id,dsd_id)
+
+
+@anvil.server.callable
 def select_dsd_by_case(case_id):
     return doc_set_definition.l_select_dsd_by_case(case_id)
 
@@ -250,8 +255,12 @@ def select_dsd_by_case(case_id):
 #     return doc_set_definition.l_select_dsd_id_by_dsd_name(dsd_name)
 
 @anvil.server.callable
-def select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year):
-    return  doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year(dsd_name, dsd_domain, dsd_year)
+def select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year,dsd_part=0):
+    return  doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year(dsd_name, dsd_domain, dsd_year,dsd_part)
+
+@anvil.server.callable
+def select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,dsd_name:str,dsd_domain,dsd_year,dsd_part=0):
+    return  doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,dsd_name, dsd_domain, dsd_year,dsd_part)
 
 
 @anvil.server.callable
@@ -267,6 +276,10 @@ def update_dsd(id_to_change, name, domain, year):
 @anvil.server.callable
 def change_status_dsd_by_id(id_to_change, new_status):
     doc_set_definition.l_change_status_dsd_by_id(id_to_change, new_status)
+
+@anvil.server.callable
+def get_form_for_a_dsd_id_modern(anvil_user_id, dsd_id):
+    return doc_set_definition.l_get_form_for_a_dsd_id_modern(anvil_user_id, dsd_id)
 
 
 # ----Doc Set Comp: Document Set Composition --------------
