@@ -32,8 +32,8 @@ def ensure_client(anvil_user_id, user_id,client_desc="is User"):
     else:
         return (client_id, False)
 
-def ensure_dsd(anvil_user_id,dsd_name,dsd_domain,dsd_year):
-    dsd_id=doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,dsd_name,dsd_domain,dsd_year)
+def ensure_dsd(anvil_user_id,dsd_name,dsd_domain,dsd_year,dsd_part):
+    dsd_id=doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,dsd_name,dsd_domain,dsd_year,dsd_part)
     if dsd_id is None:
         dsd_id=doc_set_definition.l_add_dsd_entry(dsd_name,dsd_domain,dsd_year)
     if type(dsd_id) is int:
@@ -43,7 +43,7 @@ def ensure_dsd(anvil_user_id,dsd_name,dsd_domain,dsd_year):
         return (dsd_id, False)
 
 def ensure_case(anvil_user_id, dsd_id,client_id,user_id):
-    shd_dsd_id=doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,'Shadowset','all',9999)
+    shd_dsd_id=doc_set_definition.l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id,'Shadowset','all',9999,0)
 
     shadow_case_check=cases_functions.l_check_certain_case_exists_for_client_id_modern(anvil_user_id, client_id, shd_dsd_id)
     if shadow_case_check[1] is False:
@@ -75,7 +75,7 @@ def ensure_case(anvil_user_id, dsd_id,client_id,user_id):
         return('shadow-case not o.k.', False)
 
 
-def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,dsd_year):
+def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,dsd_year,dsd_part):
 
     context_created = True
 
@@ -91,7 +91,7 @@ def l_ensure_user_context(anvil_user_id_text,anv_usr_email,dsd_name,dsd_domain,d
     client_ok = client_ensured[1]
     if client_ok==False: context_created=False
 # - ensure there is dsd = 130
-    dsd_ensured=ensure_dsd(anvil_user_id_text,dsd_name,dsd_domain,dsd_year)
+    dsd_ensured=ensure_dsd(anvil_user_id_text,dsd_name,dsd_domain,dsd_year,dsd_part)
     dsd_id = dsd_ensured[0]
     dsd_ok = client_ensured[1]
     if dsd_ok==False: context_created=False

@@ -214,7 +214,7 @@ def l_select_the_dsd_by_dsd_name_domain_year(dsd_name:str,dsd_domain,dsd_year,ds
 
 #print(l_select_the_dsd_by_dsd_name_domain_year("Address","unique",9999,0))
 
-def l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id, dsd_name, dsd_domain, dsd_year,dsd_part=0):
+def l_select_the_dsd_by_dsd_name_domain_year_modern(anvil_user_id, dsd_name, dsd_domain, dsd_year,dsd_part):
     azure = G.cached.conn_get(anvil_user_id)
     with azure:
         cursor = azure.cursor()

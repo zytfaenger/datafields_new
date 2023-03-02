@@ -154,6 +154,7 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
                             EasyEL.dbo.doc_set_def.dsd_name,
                             EasyEL.dbo.doc_set_def.dsd_domain,
                             EasyEL.dbo.doc_set_def.dsd_year,
+                            EasyEL.dbo.doc_set_def.dsd_part,
                             EasyEL.dbo.cases.language_ref, 
                             EasyEL.dbo.cases.user_id,
                             EasyEL.dbo.cases.shadow_case_id,
@@ -167,7 +168,8 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
                         left outer join 
                             doc_set_def on dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
                         WHERE
-                            client_id_ref=? """
+                            client_id_ref=? 
+                        ORDER BY EasyEL.dbo.doc_set_def.dsd_part"""
 
         cursor.execute(query,client_id)
 
