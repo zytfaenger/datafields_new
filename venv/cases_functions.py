@@ -150,8 +150,8 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
         query: str = """SELECT 
                             EasyEL.dbo.cases.case_id, 
                             EasyEL.dbo.cases.client_id_ref, 
+                            EasyEL.dbo.cases.case_form_name,
                             EasyEL.dbo.cases.dsd_reference, 
-                            EasyEL.dbo.doc_set_def.dsd_name,
                             EasyEL.dbo.doc_set_def.dsd_domain,
                             EasyEL.dbo.doc_set_def.dsd_year,
                             EasyEL.dbo.doc_set_def.dsd_part,
@@ -169,7 +169,7 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
                             doc_set_def on dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
                         WHERE
                             client_id_ref=? 
-                        ORDER BY EasyEL.dbo.doc_set_def.dsd_part"""
+                        ORDER BY EasyEL.dbo.cases.case_id"""
 
         cursor.execute(query,client_id)
 

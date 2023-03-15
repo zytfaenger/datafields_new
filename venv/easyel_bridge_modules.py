@@ -11,6 +11,7 @@ import functions
 import juno
 import language_functions
 import log_functions
+
 import relations
 import users
 import PLZ
@@ -552,6 +553,13 @@ def add_client_with_cases(anvil_user_txt, client_desc,dsd,domain,year):
 @anvil.server.callable()
 def get_links_for_a_client(anvil_user_id, client_id):
     return relations.l_get_links_for_a_client_modern(anvil_user_id, client_id)
+
+# @anvil.server.callable()
+# def self_create_pdf():
+#     return print_services.l_create_pdf()
+# @anvil.server.callable()
+# def  self_render_single_pdf_to_file(form_name, f_args, f_kwargs, filename, PDFRenderer_args=None, PDFRenderer_kwargs=None, max_same_error=3):
+#     return print_services.l_render_single_pdf_to_file(form_name, f_args, f_kwargs, filename, PDFRenderer_args=None, PDFRenderer_kwargs=None,max_same_error=3)
 
 
 anvil.server.wait_forever()

@@ -492,3 +492,6 @@ def l_ensure_doc(case_id,field_id):
 #         cursor.execute(fsupdatestring)
 #         cursor.commit()
 # update_doc_content("doc_id",2,'EasyEL.dbo.docs','doc_desc_short','Divorce Agreement9999','text')
+
+def l_get_all_potential_docs_for_a_client_modern(anvil_user_id,client_id):
+    pass

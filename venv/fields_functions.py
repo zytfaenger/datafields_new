@@ -264,7 +264,7 @@ def l_get_field_sub_group_value_for_id_modern(anvil_user_id, f_id):
             #print('l_get_field_sub_group_value_for_id', sub_group_value)
             return sub_group_value
 # G.l_register_and_setup_user('[344816,583548811]',1)
-# print(l_get_field_sub_group_value_for_id_modern('[344816,583548811]',1250))
+# print(l_get_field_sub_group_value_for_id_modern('[344816,583548811]',1130))
 
 
 
