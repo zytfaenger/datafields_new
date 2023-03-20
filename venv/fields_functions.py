@@ -81,7 +81,7 @@ def l_get_active_fields():
             results.append(dict(zip(columns, row)))
         return results
 
-#print(l_get_active_fields())
+#[print(f) for f in l_get_active_fields()]
 
 
 def l_get_active_fields_for_shadow_dsd():
@@ -189,6 +189,43 @@ def l_get_all_fields():
             results.append(dict(zip(columns, row)))
         return results
 # print(l_get_all_fields())
+
+def l_get_all_fields_label_prompt_modern(anvil_user_id,language):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            field_id, 
+                            field_typ_id, 
+                            field_desc_label,
+                            field_desc_prompt
+                            
+ 
+                        FROM 
+                            fields
+                            join field_types ft on fields.field_typ_id = ft.ft_id
+                            join field_descriptions fd on fields.field_id = fd.field_id_reference
+                        where fd.language_id_reference=?
+                        ORDER BY field_sequence"""
+        cursor.execute(query,language)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        res=cursor.fetchall()
+        for row in res:
+            results.append(dict(zip(columns, row)))
+        results2={}
+
+        for row in results:
+            results2[str(row['field_id'])]=row
+            #print(results2)
+        return results2
+
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# print(l_get_all_fields_label_prompt_modern('[344816,583548811]',3))
+
+
+
 
 def l_select_field_by_id(f_id):
     azure = connections.Azure()

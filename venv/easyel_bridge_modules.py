@@ -225,6 +225,10 @@ def update_field(id_to_change, fd_typ_id, fd_name,fd_description,fd_sequence,fd_
 def change_status_field_id(id_to_change, new_status):
     fields_functions.l_change_status_field_id(id_to_change, new_status)
 
+@anvil.server.callable
+def get_all_fields_label_prompt_modern(anvil_user_id,language):
+    return fields_functions.l_get_all_fields_label_prompt_modern(anvil_user_id,language)
+
 
 # ----Doc Set Definition: Document Set Definition
 
