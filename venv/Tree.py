@@ -1,16 +1,20 @@
+import doc_set_definition
+import globals as G
 
 class tree():
   def __init__(self,**properties):
     self.root=None
     self.tree_entry_list=[]
 
-  def add_root(self):
+  def add_root(self,payload=None):
     if len(self.tree_entry_list)==0:
         new_entry = tree_entry('new_entry_L0_P0_root')
         new_entry.entry = new_entry
+        new_entry.payload = payload
         new_entry.icon = 'closed'
         new_entry.is_root = True
         new_entry.root = new_entry
+        new_entry.status_open = False
         new_entry.prev = None
         new_entry.next = None
         new_entry.last = new_entry
@@ -22,7 +26,7 @@ class tree():
         new_entry.row = 0
         new_entry.col = 0
         self.root=new_entry
-        self.tree_entry_list.append(new_entry)
+        self.tree_entry_list.append([new_entry,None])
 
 
   # def add_tree_entry(self,position, icon, row,xs_col,x_width,is_root,is_parent,pt_first_child,is_child,pt_parent):
@@ -49,9 +53,11 @@ class tree_entry():
   def __init__(self,name):
       self.name=name
       self.entry=None
+      self.payload=None
       self.icon='closed'
       self.is_root=False,
       self.root=None
+      self.status_open=True
       self.prev=None
       self.next = None
       self.last = None
@@ -68,14 +74,16 @@ class tree_entry():
           print(v,"-->",self.__dict__.get(v))
       print('-------')
 
-  def create_entry_same_level_after(self,name): #ee = existing
+  def create_entry_same_level_after(self,name,payload): #ee = existing
 
       if(self.next is None): #I am the second on this level (either we have a root or firstchild!
-          new_entry=tree_entry('New Entry_{}'.format(name))
+          new_entry=tree_entry('{}'.format(name))
           new_entry.entry =new_entry
+          new_entry.payload = payload
           new_entry.icon='closed'
           new_entry.is_root=False
           new_entry.root=self.root
+          new_entry.status_open = True
           new_entry.prev=self
           self.next=new_entry
           new_entry.last=new_entry
@@ -87,11 +95,13 @@ class tree_entry():
           new_entry.row=self.row+1
           new_entry.col=self.col
       else:
-          new_entry=tree_entry('New Entry_{}'.format(name))
+          new_entry=tree_entry('{}'.format(name))
           new_entry.entry =new_entry
+          new_entry.payload = payload
           new_entry.icon='closed'
           new_entry.is_root=False
           new_entry.root=self.root
+          new_entry.status_open = True
           new_entry.prev=self #der Aufrufer
           new_entry.next=self.next #mein next wird Dein next bei einem insert
           self.next=new_entry #ich werde dein next
@@ -106,13 +116,15 @@ class tree_entry():
           new_entry.col=self.col
       return new_entry
 
-  def add_child(self,name):
+  def add_child(self,name,payload):
       if self.is_parent is False: #it is the first child!
-          new_entry = tree_entry('New Entry_{}'.format(name))
+          new_entry = tree_entry('{}'.format(name))
           new_entry.entry = new_entry
+          new_entry.payload = payload
           new_entry.icon = 'closed'
           new_entry.is_root = False
           new_entry.root = self.root
+          new_entry.status_open = True
           new_entry.prev = None
           new_entry.next = None
           new_entry.last = new_entry
@@ -125,8 +137,9 @@ class tree_entry():
           new_entry.col=self.col+1
 
           self.icon='Open'
-          self.is_root=self.is_root,
+          self.is_root=self.is_root
           self.root=self.root
+          self.status_open=True
           self.prev=self.prev
           self.next = self.next
           self.is_parent= True
@@ -147,11 +160,13 @@ class tree_entry():
         msg="remove_children_first!!!"
         print(msg)
      elif self.is_child:
-         if self.first_child==self and self.next is None:
+         if self.first_child==self and self.next is None: #it is the last item
              self.parent.is_parent=False
              self.parent.first_child=None
+             self.parent.status_open=False
              t.tree_entry_list.remove(self)
              self=None
+
          elif self.first_child==self and self.next is not None:
              self.parent.first_child=self.next
              self.next.prev=None
@@ -172,13 +187,25 @@ class tree_entry():
 
   def print_tree_h(self):
       #self.print()
-      print(self.name,self.col,self.row)
+      if self.payload is None:
+          payload="---"
+      else:
+          payload= """{}, {}, {}""".format(self.payload['dsd_id'],self.payload['dsd_name'],self.payload['dsd_domain'])
+
+      print(self.name,payload)
       if self.is_parent:
-          self.first_child.print_tree_h()
-          if self.next is None:
-              return
+          # print(self.status_open, self)
+          if self.status_open is False:
+              if self.next is None:
+                  return
+              else:
+                  self.next.print_tree_h()
           else:
-            self.next.print_tree_h()
+              self.first_child.print_tree_h()
+              if self.next is None:
+                  return
+              else:
+                self.next.print_tree_h()
       elif self.next is not None:
             self.next.print_tree_h()
       else:
@@ -188,48 +215,95 @@ class tree_entry():
 
 
 
+#
+# #--main---
+# t= tree()
+# t.add_root()
+# # t.root.print()
+#
+# nte=t.root.add_child('L1_P0')
+# t.tree_entry_list.append(nte)
+# # nte.print()
+#
+# nt2=nte.create_entry_same_level_after('L1_P1')
+# t.tree_entry_list.append(nt2)
+# # nt2.print()
+#
+# ch1=nte.add_child('L1_P0_L2_P0')
+# t.tree_entry_list.append(ch1)
+# # ch1.print()
+#
+# ch4=nte.add_child('L1_P0_L2_P2')
+# t.tree_entry_list.append(ch4)
+#
+#
+# ch2=ch1.create_entry_same_level_after('L1_P0_L2_P1')
+# t.tree_entry_list.append(ch2)
+# # ch2.print()
+#
+#
+# ch1_1=ch1.add_child('L1_P0_L2_P0_L3_P0')
+# t.tree_entry_list.append(ch1_1)
+#
+# ch1_1_1=ch1_1.add_child('L1_P0_L2_P0_L3_P0_L4_P0')
+# t.tree_entry_list.append(ch1_1_1)
+#
+# ch1_1_2=ch1_1_1.create_entry_same_level_after('L1_P0_L2_P0_L3_P0_L4_P1_alt')
+# t.tree_entry_list.append(ch1_1_2)
+#
+# ch1_1_3=ch1_1_1.create_entry_same_level_after('L1_P0_L2_P0_L3_P0_L4_P1_neu')
+# t.tree_entry_list.append(ch1_1_3)
+#
+# ch3=t.root.add_child('L1_P2')
+# t.tree_entry_list.append(ch3)
 
-#--main---
-t= tree()
+
+#------------------------------
+
+G.l_register_and_setup_user('[344816,583548811]',1)
+formlist=doc_set_definition.l_get_forms_in_sequence_modern('[344816,583548811]')
+t = tree()
 t.add_root()
-t.root.print()
-
-nte=t.root.create_entry_same_level_after('L0_P1')
-t.tree_entry_list.append(nte)
-nte.print()
-
-nt2=nte.create_entry_same_level_after('L0_P2')
-t.tree_entry_list.append(nt2)
-nt2.print()
-
-ch1=t.root.add_child('L0_P0_L1_P0')
-t.tree_entry_list.append(ch1)
-ch1.print()
-
-ch2=ch1.create_entry_same_level_after('L0_P0_L1_P1')
-t.tree_entry_list.append(ch2)
-ch2.print()
+root=t.root
+last_at_level = {}
+last_at_level[str(0)]=root
+t.root.name="All-Forms"
 
 
-ch1_1=ch1.add_child('L0_P0_L1_P0_L2_P0')
-t.tree_entry_list.append(ch1_1)
+forms=[]
+level_previous = 0
+for e in formlist:
+    print(e['doc_set_structure'],e['dsd_desc'])
+    ds=e['doc_set_structure']
+    payload=e
+    level=ds.count('.')+1
+    if level > level_previous: #we go deeper
+        parent=last_at_level[str(level-1)]
+        ne=parent.add_child(ds,payload)
+        t.tree_entry_list.append([ne,e])
+        last_at_level[str(level)]=ne
+        level_previous=level
+    elif level==level_previous:
+        ne=last_at_level[str(level)].create_entry_same_level_after(ds,payload)
+        t.tree_entry_list.append([ne,e])
+        last_at_level[str(level)] = ne
+        level_previous = level
+    elif level < level_previous:
+        ne=last_at_level[str(level)].create_entry_same_level_after(ds,payload)
+        t.tree_entry_list.append([ne,e])
+        last_at_level[str(level)] = ne
+        level_previous = level
 
-ch1_1_1=ch1_1.add_child('L0_P0_L1_P0_L2_P0_L3_P0')
-t.tree_entry_list.append(ch1_1_1)
 
-ch1_1_2=ch1_1_1.create_entry_same_level_after('L0_P0_L1_P0_L2_P0_L3_P1_alt')
-t.tree_entry_list.append(ch1_1_2)
+count=0
+for e in t.tree_entry_list:
 
-ch1_1_3=ch1_1_1.create_entry_same_level_after('L0_P0_L1_P0_L2_P0_L3_P1_neu')
-t.tree_entry_list.append(ch1_1_3)
-
-ch3=nt2.add_child('L0_P2_L1_P0')
-t.tree_entry_list.append(ch3)
-
-ch4=nte.add_child('L0_P1_L1_PO')
-t.tree_entry_list.append(ch4)
-
-
+    if e[1] is None:
+        print('root',count)
+        count=count+1
+    else:
+        print(e[0].name,count, e[1]['dsd_desc'])
+        count=count+1
 
 # print('------')
 # print('Länge der Liste', len(t.tree_entry_list))
@@ -240,13 +314,19 @@ t.tree_entry_list.append(ch4)
 # for e in t.tree_entry_list:
 #     print(e.name)
 # print("------------")
+# t.root.status_open = True
+# nt2.status_open = False
+# nte.status_open = False
+
+t.tree_entry_list[2][0].status_open=False
+t.tree_entry_list[20][0].status_open=False
 t.root.print_tree_h()
 print('--------')
-print(len(t.tree_entry_list))
-ch1_1_3.delete()
-print(len(t.tree_entry_list))
+# print(len(t.tree_entry_list))
+# # ch1_1_3.delete()
+# print(len(t.tree_entry_list))
 
-t.root.print_tree_h()
+# t.root.print_tree_h()
 # nte= tree_entry('nte')
 #
 #

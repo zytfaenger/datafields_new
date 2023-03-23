@@ -350,3 +350,35 @@ def l_get_form_for_a_dsd_id_modern(anvil_user_id, dsd_id):
     return form_name
 
 #print(l_get_form_for_a_dsd_id(190))
+def l_get_forms_in_sequence_modern(anvil_user_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute("""select 
+                                dsd_id,
+                                doc_set_structure,
+                                dsd_desc, 
+                                dsd_name, 
+                                dsd_domain, 
+                                dsd_year,
+                                dsd_part,                
+                                dsd_anvil_form_ref
+                            from 
+                                dbo.doc_set_def 
+                            where 
+                                admin_active=?
+                            order by 
+                                doc_set_structure
+                            """,
+                                            True)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+            #print(results[0])
+        return results
+#
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# formlist=l_get_forms_in_sequence_modern('[344816,583548811]')
+# [print(e) for e in formlist]

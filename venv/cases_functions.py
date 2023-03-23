@@ -192,7 +192,51 @@ def l_get_cases_for_a_client_id_modern(anvil_user_id, client_id):
 # for i in range(0,len(a)):
 #     print(a[i])
 
+def l_cases_formslist_for_a_client_id_modern(anvil_user_id, client_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                            EasyEL.dbo.doc_set_def.doc_set_structure,
+                            EasyEL.dbo.cases.case_id,
+                            EasyEL.dbo.cases.sub_case_flag,
+                            EasyEL.dbo.cases.sub_case_id,
+                            EasyEL.dbo.cases.client_id_ref, 
+                            EasyEL.dbo.doc_set_def.dsd_id,
+                            EasyEL.dbo.doc_set_def.dsd_desc,
+                            EasyEL.dbo.doc_set_def.dsd_name,
+                            EasyEL.dbo.doc_set_def.dsd_domain,
+                            EasyEL.dbo.doc_set_def.dsd_year,
+                            EasyEL.dbo.doc_set_def.dsd_part,
+                            EasyEL.dbo.doc_set_def.dsd_anvil_form_ref,
+                            EasyEL.dbo.cases.language_ref, 
+                            EasyEL.dbo.cases.user_id,
+                            EasyEL.dbo.cases.shadow_case_id,
+                            EasyEL.dbo.cases.shadow_case_indicator
+                        FROM 
+                            EasyEL.dbo.cases
+                        left outer join  dbo.doc_set_def on dbo.doc_set_def.dsd_id = EasyEL.dbo.cases.dsd_reference
+                        WHERE
+                            client_id_ref=? 
+                        ORDER BY EasyEL.dbo.doc_set_def.doc_set_structure"""
 
+        cursor.execute(query,client_id)
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if results == []:
+            return [None]
+        else:
+            res=[]
+            for row in results:
+                res.append(dict(zip(columns, row)))
+            return res
+
+# G.l_register_and_setup_user('[344816,583548811]',1) #Louis
+# a=l_cases_formslist_for_a_client_id_modern('[344816,583548811]',210)
+# for i in range(0,len(a)):
+#     print(a[i])
 
 def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
     usr_id=users.l_get_userid_for_anvil_user(anvil_usr_id)

@@ -285,6 +285,9 @@ def change_status_dsd_by_id(id_to_change, new_status):
 @anvil.server.callable
 def get_form_for_a_dsd_id_modern(anvil_user_id, dsd_id):
     return doc_set_definition.l_get_form_for_a_dsd_id_modern(anvil_user_id, dsd_id)
+@anvil.server.callable
+def get_forms_in_sequence_modern(anvil_user_id):
+    return doc_set_definition.l_get_forms_in_sequence_modern(anvil_user_id)
 
 
 # ----Doc Set Comp: Document Set Composition --------------
@@ -439,6 +442,9 @@ def check_certain_case_exists_for_client_id(client_id, dsd_id):
 @anvil.server.callable()
 def add_case(client_id,dsd_id,language_ref,user_id,shadow_case_id=0,shdw_case_ind=False):
     return cases_functions.l_add_case(client_id,dsd_id,language_ref,user_id,shadow_case_id,shdw_case_ind)
+@anvil.server.callable()
+def cases_formslist_for_a_client_id_modern(anvil_user_id, client_id):
+    return cases_functions.l_cases_formslist_for_a_client_id_modern(anvil_user_id, client_id)
 
 
 # ---- user.functions.py --------------
