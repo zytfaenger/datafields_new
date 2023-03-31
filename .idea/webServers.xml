@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="a4076d89-6fe4-4cb2-87a6-871c5e416366" name="MSFP_EasyEL" url="http://localhost">
+        <fileTransfer mountedRoot="/Volumes/Dev/EasyEL_Code" accessType="MOUNT" port="0" />
+      </webServer>
+    </option>
+  </component>
+</project>
