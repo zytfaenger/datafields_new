@@ -571,5 +571,9 @@ def get_links_for_a_client(anvil_user_id, client_id):
 # def  self_render_single_pdf_to_file(form_name, f_args, f_kwargs, filename, PDFRenderer_args=None, PDFRenderer_kwargs=None, max_same_error=3):
 #     return print_services.l_render_single_pdf_to_file(form_name, f_args, f_kwargs, filename, PDFRenderer_args=None, PDFRenderer_kwargs=None,max_same_error=3)
 
+@anvil.server.callable()
+def get_all_docs_required_for_client_id_modern(anvil_user_id, client_id,language_id='1'):
+    return docs_functions.l_get_all_docs_required_for_client_id_by_form_year_modern(anvil_user_id, client_id,language_id)
+
 
 anvil.server.wait_forever()

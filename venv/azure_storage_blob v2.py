@@ -1,9 +1,21 @@
-import os, uuid
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+import base64
+import os
+import sys
+import uuid
+
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
+
+from azure.keyvault.keys.crypto import CryptographyClient, KeyWrapAlgorithm,EncryptionAlgorithm
+from azure.keyvault.keys import KeyVaultKey, KeyType, KeyClient
+from azure.keyvault.secrets import SecretClient
+
+from azure.storage.blob import BlobServiceClient
+
 
 
 account_url = "https://easyelblob.blob.core.windows.net"
+keyvault_url = "https://easyelvault.vault.azure.net/"
+
 default_credential = DefaultAzureCredential()
 
 # Create the BlobServiceClient object
@@ -27,9 +39,24 @@ upload_file_path = os.path.join(local_path, local_file_name)
 # file.write("Hello, World!")
 # file.close()
 
+credential = DefaultAzureCredential()
+
+key_client = KeyClient(keyvault_url, credential=credential)
+
+key = key_client.get_key('fuerdavid')
+
+crypo_client=CryptographyClient(key,credential=credential)
+
+
+
 # Create a blob client using the local file name as the name for the blob
 blob_client = blob_service_client.get_blob_client(container='easyelstore', blob=local_file_name)
+blob_client.encryption_version='2.0'
+key_bytes=crypo_client.wrap_key(key=key,algorithm=KeyWrapAlgorithm.rsa_oaep)
+kvk=KeyVaultKey(key_id=key.id,key_ops=['unwrapKey', 'wrapKey'],k=key_bytes,kty=KeyType.rsa)
 
+
+blob_client.key_encryption_key=kvk
 print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
 
 # Upload the created file

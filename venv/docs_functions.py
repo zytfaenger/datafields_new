@@ -3,6 +3,7 @@ import field_descriptions
 import functions
 import log_functions
 import connections
+import globals as G
 
 
 def l_get_active_docs():
@@ -158,6 +159,56 @@ def l_get_docs_for_case_id(ca_id):
 
 # print(l_get_docs_for_case_id(100))
 
+
+
+def l_get_all_docs_required_for_client_id_by_form_year_modern(anvil_user_id, client_id,language_id='1'):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query="""
+            select 
+                    d.doc_id,
+                    d.doc_pending,
+                    dsd.dsd_domain Level1,
+                    trim(str(dsd.dsd_year)) Level2,
+                    ca.case_form_name Level3,
+                    'Section ' + left(fi.field_group,1)  Level4,
+                    fd.field_desc_label Level5,
+                    d.admin_active,
+                    d.field_id_reference,
+                    ca.case_id,
+                    dsd.dsd_id,
+                    fd.field_desc_label
+
+            from docs as d
+                    join EasyEL.dbo.cases as ca on ca.case_id =  d.case_id_reference
+                    join EasyEL.dbo.doc_set_def as dsd on dsd_id = ca.dsd_reference
+                    join EasyEL.dbo.clients as cl on cl.client_id = ca.client_id_ref
+                    join EasyEL.dbo.fields as fi on fi.field_id = d.field_id_reference
+                    join EasyEL.dbo.field_descriptions as fd on fd.field_id_reference = d.field_id_reference
+            where
+                    client_id_ref=? and fd.language_id_reference=?
+            order by Level1, Level2, Level3,Level4, d.admin_active desc
+        """
+        cursor.execute(query,(client_id,language_id))
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+            # print(results[0])
+        if results == []:
+            return None
+        else:
+            return results
+
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# a=l_get_all_docs_required_for_client_id_by_form_year_modern('[344816,583548811]','210','1')
+# [print(d) for d in a]
+
+
+
+
+
 def l_get_doc_id_for_a_field_by_case(ca_id, field_id):
     azure = connections.Azure()
     with azure:
@@ -181,6 +232,20 @@ def l_get_doc_id_for_a_field_by_case(ca_id, field_id):
 
 
 # print(l_get_doc_id_for_a_field_by_case(100,530))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def l_get_case_id_client_id_for_doc_id(d_id):
     azure = connections.Azure()
