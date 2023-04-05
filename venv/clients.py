@@ -1,3 +1,5 @@
+import uuid
+
 import connections
 import functions
 import relations
@@ -104,6 +106,40 @@ def l_get_all_clients():
 
 # print(l_get_all_clients())
 
+def l_get_all_clients_modern_full(anvil_user_id):
+    query: str = """SELECT 
+                        client_id, 
+                        client_user_ref, 
+                        client_is_user, 
+                        client_name,
+                        client_relation_uuid,
+                        admin_user, 
+                        admin_previous_entry, 
+                        admin_active, 
+                        admin_timestamp,
+                        client_relation_uuid,
+                        doc_store_uuid
+                    FROM 
+                        clients 
+                        """
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute(query)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# clients=l_get_all_clients_modern_full('[344816,583548811]')
+# [print(c) for c in clients]
+
+
+
+
 def l_get_client_by_id(client_id):
     azure = connections.Azure()
     with azure:
@@ -151,6 +187,37 @@ def l_get_client_by_id_modern(anvil_user_id, client_id):
                             admin_previous_entry, 
                             admin_active, 
                             admin_timestamp
+                        FROM 
+                            clients 
+                        WHERE 
+                            client_id=?""", client_id)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchone()
+        if results is None:
+            return None
+        else:
+            res=[]
+            res.append(dict(zip(columns, results)))
+            # print(results[0])
+            return res[0]
+
+def l_get_client_by_id_modern_full(anvil_user_id, client_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute("""SELECT 
+                            client_id, 
+                            client_user_ref, 
+                            client_is_user, 
+                            client_name,
+                            client_relation_uuid,
+                            admin_user, 
+                            admin_previous_entry, 
+                            admin_active, 
+                            admin_timestamp,
+                            client_relation_uuid,
+                            doc_store_uuid
                         FROM 
                             clients 
                         WHERE 
@@ -334,6 +401,8 @@ def l_add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
             current_admin_user=current_admin_user_rec['admin_user']
             timestamp = functions.make_timestamp()
             azure = connections.Azure()
+            client_relation_uuid=uuid.uuid1()
+            doc_store_uuid=uuid.uuid4()
             with azure:
                 cursor = azure.conn.cursor()
                 query = """insert into 
@@ -345,9 +414,11 @@ def l_add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
                                  admin_user, 
                                  admin_previous_entry,
                                  admin_timestamp,
-                                 admin_active
+                                 admin_active,
+                                 client_relation_uuid,
+                                 doc_store_uuid
                              )
-                             values (?,?,?,?,?,?,?,?)"""
+                             values (?,?,?,?,?,?,?,?,?,?)"""
                 cursor.execute(query,
                                (user_ref,
                                 client_is_user,
@@ -356,7 +427,9 @@ def l_add_client_to_clients  (user_ref,client_name="None",client_is_user=False):
                                 current_admin_user,
                                 0,
                                 timestamp,
-                                1
+                                1,
+                                client_relation_uuid,
+                                doc_store_uuid
                                 ))
                 cursor.commit()
                 cursor.execute("SELECT @@IDENTITY AS ID;")
@@ -379,20 +452,24 @@ def l_add_client_to_clients_modern  (anvil_user_id, user_ref,client_name="None",
             current_admin_user=current_admin_user_rec['admin_user']
             timestamp = functions.make_timestamp()
             azure = G.cached.conn_get(anvil_user_id)
+            client_relation_uuid=uuid.uuid1()
+            doc_store_uuid=uuid.uuid4()
             with azure:
                 cursor = azure.cursor()
                 query = """insert into 
-                             clients (
-                                 client_user_ref,
-                                 client_is_user,
-                                 client_name,
-                                 client_relation_uuid,
-                                 admin_user, 
-                                 admin_previous_entry,
-                                 admin_timestamp,
-                                 admin_active
-                             )
-                             values (?,?,?,?,?,?,?,?)"""
+                                             clients (
+                                                 client_user_ref,
+                                                 client_is_user,
+                                                 client_name,
+                                                 client_relation_uuid,
+                                                 admin_user, 
+                                                 admin_previous_entry,
+                                                 admin_timestamp,
+                                                 admin_active,
+                                                 client_relation_uuid,
+                                                 doc_store_uuid
+                                             )
+                                             values (?,?,?,?,?,?,?,?,?,?)"""
                 cursor.execute(query,
                                (user_ref,
                                 client_is_user,
@@ -401,7 +478,9 @@ def l_add_client_to_clients_modern  (anvil_user_id, user_ref,client_name="None",
                                 current_admin_user,
                                 0,
                                 timestamp,
-                                1
+                                1,
+                                client_relation_uuid,
+                                doc_store_uuid
                                 ))
                 cursor.commit()
                 cursor.execute("SELECT @@IDENTITY AS ID;")
@@ -411,7 +490,7 @@ def l_add_client_to_clients_modern  (anvil_user_id, user_ref,client_name="None",
             print('add_client: current_admin_user should be dict!:', current_admin_user_rec, type(current_admin_user_rec))
             return None
 
-# l_add_client_to_clients(100,"Tempo zu löschen",client_is_user=True)
+
 
 def l_ensure_link_code_client_modern(anvil_user_id, client_id):
     client_record=l_get_client_by_id_modern(anvil_user_id,client_id)
@@ -487,7 +566,49 @@ def l_update_client(client_id_to_change, user_ref, client_is_user,  name):  #upd
 
 # l_update_client(190, 160,False,"Roger Rabbit")
 
+def l_update_client_modern(anvil_user_id, client_id_to_change, user_ref, client_is_user,  name):  #update uuid is another function below!!
+    current_admin_user_rec =users.l_get_user_by_id_modern(anvil_user_id,user_ref)
+    if current_admin_user_rec is None:
+        print('update_client: User given does not exist:', user_ref)
+        return None
+    else:
+        if type(current_admin_user_rec) != dict:
+            print('add_client: current_admin_user should be dict!:', current_admin_user_rec,
+                  type(current_admin_user_rec))
+            return None
+        else:
+            current_admin_user = current_admin_user_rec['admin_user']
+            current_timestamp = functions.make_timestamp()
+            current_table_name = 'clients'
+            current_table_id=client_id_to_change
+            current_payload=str(l_get_client_by_id_modern_full(anvil_user_id, client_id_to_change))
+            #print(current_user,current_timestamp,current_table_name,current_table_id,current_payload)
+            previous_log_entry=add_log_entry(current_admin_user,
+                                             current_timestamp,
+                                             current_table_name,
+                                             current_table_id,
+                                             current_payload)
+            #print(previous_log_entry)
+            azure = connections.Azure()
+            with azure:
+                cursor3 = azure.conn.cursor()
+                query="""   UPDATE 
+                                clients 
+                            SET 
+                                client_user_ref=?,
+                                client_is_user=?,
+                                client_name=?,
+                                admin_user=?,
+                                admin_timestamp=?,
+                                admin_previous_entry=?,
+                                admin_active=?
+                            WHERE 
+                                EasyEL.dbo.clients.client_id=?"""
+                cursor3.execute(query, (user_ref,client_is_user,name,current_admin_user, current_timestamp, previous_log_entry, 1, client_id_to_change))
+                cursor3.commit()
 
+
+# l_update_client(190, 160,False,"Roger Rabbit")
 
 
 
@@ -616,3 +737,31 @@ def l_get_client_string_from_client_id(link_id):
         return address
 
 #print(l_get_client_string_from_client_id('BE979A7A-A6C2-11ED-8FF5-ACDE48001122'))
+
+def l_ensure_doc_store_uuid(anvil_user_id):
+    clients = l_get_all_clients_modern_full(anvil_user_id)
+    for c in clients:
+        if c['doc_store_uuid'] is None:
+            current_client_id = c['client_id']
+            new_doc_store_uuid=uuid.uuid4()
+            azure = G.cached.conn_get(anvil_user_id)
+            with azure:
+                cursor = azure.cursor()
+                cursor.execute("""  UPDATE 
+                                          clients
+                                      SET 
+                                          doc_store_uuid=?
+                                      WHERE 
+                                        client_id=?""",
+                                       (new_doc_store_uuid,
+                                        current_client_id))
+                cursor.commit()
+            print('Client {}, doc_store_uuid_set to: {}'.format(current_client_id,new_doc_store_uuid))
+        else:
+            print('Client {} already set!'.format(c['client_id']))
+
+
+G.l_register_and_setup_user('[344816,583548811]',1)
+l_ensure_doc_store_uuid('[344816,583548811]')
+
+

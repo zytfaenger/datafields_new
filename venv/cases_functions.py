@@ -235,10 +235,10 @@ def l_cases_formslist_for_a_client_id_modern(anvil_user_id, client_id):
                 res.append(dict(zip(columns, row)))
             return res
 
-G.l_register_and_setup_user('[344816,583548811]',1) #Louis
-a=l_cases_formslist_for_a_client_id_modern('[344816,583548811]',210)
-for i in range(0,len(a)):
-    print(a[i])
+# G.l_register_and_setup_user('[344816,583548811]',1) #Louis
+# a=l_cases_formslist_for_a_client_id_modern('[344816,583548811]',210)
+# for i in range(0,len(a)):
+#     print(a[i])
 
 def l_check_certain_case_exists_for_anvil_userid(anvil_usr_id,dsd_id):      #check of case 130 = Address is here
     usr_id=users.l_get_userid_for_anvil_user(anvil_usr_id)

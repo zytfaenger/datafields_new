@@ -189,6 +189,43 @@ def l_get_user_by_id(usr_id):
 # print(type(a))
 # print(a['anvil_user_2_int'])
 
+def l_get_user_by_id_modern(anvil_user_id,usr_id):
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        cursor.execute("""SELECT 
+                            user_id,
+                            user_anvil_user,
+                            anvil_user_1_int,
+                            anvil_user_2_int,
+                            temp_user,
+                            client_id_reference,
+                            user_name,
+                            user_firstname,
+                            user_town,                                                
+                            admin_user, 
+                            admin_previous_entry, 
+                            admin_active, 
+                            admin_timestamp
+                        FROM 
+                            users 
+                        where 
+                            user_id=?""", usr_id)
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchone()
+        if results is None:
+            return None
+        else:
+            res=[]
+            res.append(dict(zip(columns, results)))
+            # print(results[0])
+            return res[0]
+
+
+
+
+
 def l_get_admin_user_by_id(usr_id):
     return l_get_user_by_id(usr_id)['admin_user']
 
