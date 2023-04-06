@@ -761,7 +761,7 @@ def l_ensure_doc_store_uuid(anvil_user_id):
             print('Client {} already set!'.format(c['client_id']))
 
 
-G.l_register_and_setup_user('[344816,583548811]',1)
-l_ensure_doc_store_uuid('[344816,583548811]')
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# l_ensure_doc_store_uuid('[344816,583548811]')
 
 
