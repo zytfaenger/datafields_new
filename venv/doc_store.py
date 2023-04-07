@@ -1,6 +1,9 @@
 import base64
 import uuid
 import os
+
+import clients
+import globals as G
 from PyPDF2 import PdfReader, PdfWriter
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -12,6 +15,59 @@ from azure.keyvault.keys.crypto import CryptographyClient, EncryptionAlgorithm
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from pathlib import Path
+
+
+def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file):
+    client_doc_id=clients.l_get_doc_store_uuid_for_a_client(anvil_user_id,client_id)
+    orginal_file_name=file.name
+
+    doc_typ_id_ref = 40 #nicht zugeordnet
+    doc_store_group = ""
+    file_desc = ""
+    years_ref='0'
+    new_file_name = str(uuid.uuid4())
+    file_desc = ""
+    file_name, file_extension = os.path.splitext(file.name)
+    print(file_name, file_extension)
+
+
+    try:
+        azure = G.cached.conn_get(anvil_user_id)
+    except:
+        G.l_register_and_setup_user(anvil_user_id, 1)
+        azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query= """ insert into docs_stored
+                                     (client_id_ref, 
+                                     original_file_name,
+                                     doc_typ_id_ref,
+                                     doc_store_group, 
+                                     file_description, 
+                                     years_ref,
+                                     store_full_file_name,
+                                     store_filename,
+                                     store_file_ext 
+                                     )
+                                     values (?,?,?,?,?,?,?,?,?)"""
+        cursor.execute(query,
+                       (client_id,
+                        orginal_file_name,
+                        doc_typ_id_ref,
+                        doc_store_group,
+                        file_desc,
+                        years_ref,
+                        new_file_name,
+                        file_name,
+                        file_extension
+                        ))
+        cursor.commit()
+        cursor.execute("SELECT @@IDENTITY AS ID;")
+        last_id = int(cursor.fetchone()[0])
+        return last_id
+
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# print(l_add_doc_to_docstore_modern('[344816,583548811]','210','test.pfd'))
 
 def ensure_datafolder(foldernmae):
     try:
@@ -32,7 +88,7 @@ def ensure_datafolder2(data):
 
 
 
-def l_receive_docs(filelist):
+def l_process_and_import_docs(filelist):
     for f in filelist:
         print (f.name)
         filename,file_extension = os.path.splitext(f.name)
@@ -223,3 +279,12 @@ def write_decoded_file(decoded_file, path_and_filename_and_ending):
 # blob_client = blob_service_client.get_blob_client(container='easyelstore', blob=local_file_name)
 #
 # print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
+
+
+def l_process_and_import_docs(anvil_user_id, client_id, filelist):
+    for file in filelist:
+        print (file.name)
+        record=l_add_doc_to_docstore_modern(anvil_user_id,client_id,file)
+        print('process und import - new record',record)
+        file_name,file_extension = os.path.splitext(file.name)
+        print(file_name,file_extension)

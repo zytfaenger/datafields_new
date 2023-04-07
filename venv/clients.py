@@ -763,5 +763,32 @@ def l_ensure_doc_store_uuid(anvil_user_id):
 
 # G.l_register_and_setup_user('[344816,583548811]',1)
 # l_ensure_doc_store_uuid('[344816,583548811]')
+def l_get_doc_store_uuid_for_a_client(anvil_user_id, client_id):
+    azure=G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query="""
+        select 
+          doc_store_uuid
+        from clients
+        where client_id=?
+        """
+        cursor.execute(query,client_id)
+        result=cursor.fetchone()
+        if result is None:
+            cursor2 = azure.cursor()
+            new_doc_store_id=str(uuid.uuid4())
+            query = """UPDATE 
+                         clients 
+                       SET 
+                         doc_store_uuid=?
+                       WHERE 
+                         EasyEL.dbo.clients.client_id=?"""
+            cursor2.execute(query,new_doc_store_id,client_id)
+            return new_doc_store_id
+        else:
+            return result[0]
 
-
+        # print(columns)
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# print(l_get_doc_store_uuid_for_a_client('[344816,583548811]',420))
