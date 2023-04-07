@@ -16,3 +16,4 @@ def l_register_and_setup_user(anvil_user_id,language_id=1):
     cached.info_add(anvil_user_id,language_id)
     # if G.cached.anvil_user_has_user(anvil_user_id) is False:
     #     G.register_user_id(anvil_user_id)
+

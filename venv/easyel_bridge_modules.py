@@ -4,7 +4,8 @@ import client_data_main
 import clients
 import doc_set_compositions
 import doc_set_definition
-# import doc_store
+import docs_doc_types
+import doc_store
 import docs_functions
 import field_types
 import fields_functions
@@ -17,6 +18,7 @@ import relations
 import users
 import PLZ
 import globals as G
+import years_functions
 
 # anvil.server.connect('server_FTBCZPR7E2WKRCLMHQQYW6VB-IFLJ3H45LTJM3EER')  #modules PDS v1
 anvil.server.connect('server_ORIZJ3HLOBXXSFAX5HN3IE5Z-WCKU3CRQDF4JNFDC')  #modules PDS v2
@@ -577,10 +579,20 @@ def get_all_docs_required_for_client_id_modern(anvil_user_id, client_id,language
     return docs_functions.l_get_all_docs_required_for_client_id_by_form_year_modern(anvil_user_id, client_id,language_id)
 
 @anvil.server.callable()
-def receive_docs(filelist):
-    return doc_store.l_receive_docs(filelist)
+def process_docs(filelist):
+    return doc_store.l_process_and_import_docs(filelist)
 
 
+# ---- years functions -----
+@anvil.server.callable()
+def select_years_for_dropdown(anvil_user_id):
+    return years_functions.l_select_years_for_dropdown(anvil_user_id)
+
+# ---- docs_doc_types functions -----
+
+@anvil.server.callable()
+def select_doc_types_for_dropdown(anvil_user_id):
+    return docs_doc_types.l_select_doc_types_for_dropdown(anvil_user_id)
 
 
 anvil.server.wait_forever()
