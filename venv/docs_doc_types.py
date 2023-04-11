@@ -13,7 +13,7 @@ def l_select_doc_types_for_dropdown(anvil_user_id):
                                 doc_typ_id
                             FROM 
                                 docs_doc_types
-                            order by doc_typ_id,doc_type_name
+                            order by doc_type_sort
                                 """)
         columns = [column[0] for column in cursor.description]
 

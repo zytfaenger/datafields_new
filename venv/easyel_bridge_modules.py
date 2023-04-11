@@ -599,6 +599,10 @@ def get_docs_for_a_client_id(anvil_user_id,client_id):
     return doc_store.l_get_docs_for_a_client_id(anvil_user_id,client_id)
 
 @anvil.server.callable()
+def update_doc_store_field_modern(anvil_user_id, my_docs_id_to_change, field,value):
+    return doc_store.l_update_doc_store_field_modern(anvil_user_id, my_docs_id_to_change, field, value)
+
+@anvil.server.callable()
 def process_docs(anvil_user_id, client_id, files):
     return doc_store.l_process_and_import_docs(anvil_user_id,client_id,files)
 

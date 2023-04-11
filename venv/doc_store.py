@@ -2,6 +2,9 @@ import base64
 import uuid
 import os
 import hashlib
+import io
+
+import azure_storage_blob
 import clients
 import globals as G
 from PyPDF2 import PdfReader, PdfWriter
@@ -30,6 +33,7 @@ def l_get_docs_for_a_client_id(anvil_user_id,client_id):
         query: str = """SELECT 
                            my_docs_id id,
                            doc_typ_id_ref cat,
+                           dt.doc_type_sort dt_sort,
                            years_ref year,
                            doc_store_group sort,
                            original_file_name doc,
@@ -37,10 +41,11 @@ def l_get_docs_for_a_client_id(anvil_user_id,client_id):
                            store_file_ext ext
                             
                         FROM 
-                            docs_stored
+                            docs_stored ds
+                        join docs_doc_types dt on dt.doc_typ_id = ds.doc_typ_id_ref
                         WHERE
                             client_id_ref=? 
-                        ORDER BY cat,year,sort"""
+                        ORDER BY dt_sort,year,sort"""
 
         cursor.execute(query, client_id)
 
@@ -63,7 +68,6 @@ def l_get_docs_for_a_client_id(anvil_user_id,client_id):
 
 
 def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file, hash):
-    client_doc_id=clients.l_get_doc_store_uuid_for_a_client(anvil_user_id,client_id)
     orginal_file_name=file.name
 
     doc_typ_id_ref = 40 #"=nicht zugeordnet"
@@ -92,9 +96,11 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file, hash):
                                      store_full_file_name,
                                      store_filename,
                                      store_file_ext,
-                                     hash 
+                                     hash,
+                                     our_pdf_encoding
+                                      
                                      )
-                                     values (?,?,?,?,?,?,?,?,?,?)"""
+                                     values (?,?,?,?,?,?,?,?,?,?,?)"""
         cursor.execute(query,
                        (client_id,
                         orginal_file_name,
@@ -105,15 +111,46 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file, hash):
                         new_file_name,
                         file_name,
                         file_extension,
-                        hash
+                        hash,
+                        False
                         ))
         cursor.commit()
         cursor.execute("SELECT @@IDENTITY AS ID;")
         last_id = int(cursor.fetchone()[0])
-        return last_id
+        return (last_id,new_file_name)
 
 # G.l_register_and_setup_user('[344816,583548811]',1)
 # print(l_add_doc_to_docstore_modern('[344816,583548811]','210','test.pfd'))
+
+def l_update_doc_store_field_modern(anvil_user_id, my_docs_id_to_change, field,value):
+    try:
+        azure = G.cached.conn_get(anvil_user_id)
+    except:
+        G.l_register_and_setup_user(anvil_user_id, 1)
+        azure = G.cached.conn_get(anvil_user_id)
+    permissible_fields={'doc_typ_id_ref','years_ref','file_description','doc_store_group','our_pdf_encoding'}
+    with azure:
+        if field in permissible_fields:
+            cursor = azure.cursor()
+            query = """UPDATE docs_stored
+                        SET 
+                            {}=?
+                        WHERE 
+                            my_docs_id=?""".format(field)
+            cursor.execute(query, (value,my_docs_id_to_change))
+            cursor.commit()
+            return "updated"
+        else:
+            print('field not permitted')
+            return "not changed"
+
+
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# l_update_doc_store_field_modern('[344816,583548811]','18','years_ref','2023')
+# l_update_doc_store_field_modern('[344816,583548811]','18','doc_typ_id_ref','25')
+# l_update_doc_store_field_modern('[344816,583548811]','18','client_id_ref','180')
+
+
 
 def ensure_datafolder(foldernmae):
     try:
@@ -134,11 +171,11 @@ def ensure_datafolder2(data):
 
 
 
-def l_process_and_import_docs(filelist):
-    for f in filelist:
-        print (f.name)
-        filename,file_extension = os.path.splitext(f.name)
-        print(filename,file_extension)
+# def l_process_and_import_docs(filelist):
+#     for f in filelist:
+#         print (f.name)
+#         filename,file_extension = os.path.splitext(f.name)
+#         print(filename,file_extension)
 
 def store_secret(keyname,token):
     credential = DefaultAzureCredential()
@@ -197,9 +234,8 @@ def create_token(pwd):
    key = base64.urlsafe_b64encode(kdf.derive(password))
    return key
 
-def encode(key,open_file):
+def encode(key,file_read):
    f = Fernet(key)
-   file_read = open_file.read()
    encoded_file= f.encrypt(file_read)
    return encoded_file
 
@@ -212,6 +248,10 @@ def write_decoded_file(decoded_file, path_and_filename_and_ending):
    fileout = open(path_and_filename_and_ending, mode='wb')
    fileout.write(decoded_file)
    fileout.close()
+
+
+
+
 
 
 # file= open(file=upload_file_path, mode='rb')
@@ -325,11 +365,12 @@ def write_decoded_file(decoded_file, path_and_filename_and_ending):
 # blob_client = blob_service_client.get_blob_client(container='easyelstore', blob=local_file_name)
 #
 # print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
-def get_hash(file):
-    if file.length ==0:
+
+
+def get_hash(file_read):
+    if len(file_read) ==0:
         pass
     else:
-        file_read = file.get_bytes()
         hash=hashlib.sha3_384(file_read)
         return str(hash.hexdigest())
 def check_hash_present_modern(anvil_user_id, hash):
@@ -361,19 +402,69 @@ def check_hash_present_modern(anvil_user_id, hash):
 # print(check_hash_present_modern('[344816,583548811]','3426c2087d98d35f740987f70ed4f090abda5c0b41ec381165cfb3e90150a1952d98f637eaaba6fc913ecd0c8ec4d8b8'))
 
 def l_process_and_import_docs(anvil_user_id, client_id, filelist):
-    print(anvil_user_id)
-    return_list=[]
+    #store in DB with reference
+    return_list=[] #um den Status der einzelnen Dokumente zurückzugeben
     for file in filelist:
         print (file.name)
-        hash = get_hash(file)
+        file_read = file.get_bytes()
+        #make sure that document is entered into table but has no duplicates
+        hash = get_hash(file_read)
         print(file.name, "has Hash:", hash)
         if check_hash_present_modern(anvil_user_id,hash):
             return_list.append(('{} not_stored'.format(file.name),'Datei {} existiert bereits'.format(file.name)))
         else:
-            record=l_add_doc_to_docstore_modern(anvil_user_id,client_id,file,hash)
-            print('process und import - new record',record)
+            newrecord=l_add_doc_to_docstore_modern(anvil_user_id,client_id,file,hash)
+            new_docs_stored_id=newrecord[0] #id of doc stored
+            new_file_name_uuid=newrecord[1] #uuid generated and stored
+
+            print('process und import - new record',newrecord)
             return_list.append(('{} stored'.format(file.name),'Datei {} hinzugefügt'.format(file.name)))
-    file_name,file_extension = os.path.splitext(file.name)
-    print(file_name,file_extension)
+
+            file_name, file_extension = os.path.splitext(file.name)
+            client_doc_id_uuid = clients.l_get_doc_store_uuid_for_a_client(anvil_user_id, client_id)
+
+            if file_extension ==".pdf": #make sure pdf are encrypted (double security)
+                file_to_write=io.open("ftw.pdf",'wb')
+                file_to_write.write(file_read)
+                file_to_write.close()
+                file_to_read=io.open("ftw.pdf",'rb')
+
+                current_pdf = PdfReader(file_to_read)
+                if current_pdf.is_encrypted is False: # it is a PDF that is not encrypted->encrypt it...
+                    file_to_encrypt_pdf=PdfWriter(new_file_name_uuid)
+                    for page in current_pdf.pages:
+                        file_to_encrypt_pdf.add_page(page)
+                    file_to_encrypt_pdf.encrypt(client_doc_id_uuid)
+                    file_to_encrypt_pdf.write("file_to_upload_encrypted_pdf.pdf")
+                    file_to_encrypt_pdf.close()
+                    file_reopen=io.open('file_to_upload_encrypted_pdf.pdf','rb')
+                    file_to_encrypt=file_reopen.read()  #need a bytestream...
+                    l_update_doc_store_field_modern(anvil_user_id, new_docs_stored_id, 'our_pdf_encoding', True)
+                    return_list.append(('{} encrypted'.format(file.name), 'Datei {} is now encrypted'.format(file.name)))
+                else: # PDF is encrypted
+                    return_list.append('{} not encrypted'.format(file.name), 'Datei {} already encrypted. Key is user responsibility'.format(file.name))
+                    file_to_encrypt=file_to_read
+                os.remove('ftw.pdf')
+                os.remove('file_to_upload_encrypted_pdf.pdf')
+            else:
+                file_to_encrypt=file_read #other documents are
+                return_list.append(('{} not encrypted'.format(file.name), 'Datei {} not pdf'.format(file.name)))
+            # now, let's get a key for the encryption
+
+            key=create_token(new_file_name_uuid)
+            return_list.append(('{} key created'.format(file.name), 'Key used to encrypt file'))
+            # and store it in the secret_store
+            secret=store_secret(new_file_name_uuid,key)
+            return_list.append(('{} key stored'.format(file.name), 'Key naming regular'))
+            #now use the key to encode the file
+            encryped_file_for_BLOB=encode(key,file_to_encrypt)
+            upload_result=azure_storage_blob.l_upload_to_blob(new_file_name_uuid,encryped_file_for_BLOB)
+            if upload_result:
+                return_list.append(('{} File stored'.format(file.name), 'File naming regular'))
+            else:
+                return_list.append(('{} File NOT stored'.format(file.name), 'Check error messages'))
+
     return return_list
 
+def l_download_blob():
+    pass
