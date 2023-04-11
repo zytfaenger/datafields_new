@@ -1,7 +1,7 @@
 import base64
 import uuid
 import os
-
+import hashlib
 import clients
 import globals as G
 from PyPDF2 import PdfReader, PdfWriter
@@ -17,11 +17,56 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from pathlib import Path
 
 
-def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file):
+def l_get_docs_for_a_client_id(anvil_user_id,client_id):
+    try:
+        azure = G.cached.conn_get(anvil_user_id)
+    except:
+        G.l_register_and_setup_user(anvil_user_id, 1)
+        azure = G.cached.conn_get(anvil_user_id)
+
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                           my_docs_id id,
+                           doc_typ_id_ref cat,
+                           years_ref year,
+                           doc_store_group sort,
+                           original_file_name doc,
+                           file_description decscriptor,
+                           store_file_ext ext
+                            
+                        FROM 
+                            docs_stored
+                        WHERE
+                            client_id_ref=? 
+                        ORDER BY cat,year,sort"""
+
+        cursor.execute(query, client_id)
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if results == []:
+            return [None]
+        else:
+            res = []
+            for row in results:
+                res.append(dict(zip(columns, row)))
+            return res
+
+# G.l_register_and_setup_user('[344816,583548811]',1) #Louis
+# a=l_get_docs_for_a_client_id('[344816,583548811]',210)
+# for i in range(0,len(a)):
+#     print(a[i])
+
+
+
+def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file, hash):
     client_doc_id=clients.l_get_doc_store_uuid_for_a_client(anvil_user_id,client_id)
     orginal_file_name=file.name
 
-    doc_typ_id_ref = 40 #nicht zugeordnet
+    doc_typ_id_ref = 40 #"=nicht zugeordnet"
     doc_store_group = ""
     file_desc = ""
     years_ref='0'
@@ -29,7 +74,6 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file):
     file_desc = ""
     file_name, file_extension = os.path.splitext(file.name)
     print(file_name, file_extension)
-
 
     try:
         azure = G.cached.conn_get(anvil_user_id)
@@ -47,9 +91,10 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file):
                                      years_ref,
                                      store_full_file_name,
                                      store_filename,
-                                     store_file_ext 
+                                     store_file_ext,
+                                     hash 
                                      )
-                                     values (?,?,?,?,?,?,?,?,?)"""
+                                     values (?,?,?,?,?,?,?,?,?,?)"""
         cursor.execute(query,
                        (client_id,
                         orginal_file_name,
@@ -59,7 +104,8 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file):
                         years_ref,
                         new_file_name,
                         file_name,
-                        file_extension
+                        file_extension,
+                        hash
                         ))
         cursor.commit()
         cursor.execute("SELECT @@IDENTITY AS ID;")
@@ -279,12 +325,55 @@ def write_decoded_file(decoded_file, path_and_filename_and_ending):
 # blob_client = blob_service_client.get_blob_client(container='easyelstore', blob=local_file_name)
 #
 # print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
+def get_hash(file):
+    if file.length ==0:
+        pass
+    else:
+        file_read = file.get_bytes()
+        hash=hashlib.sha3_384(file_read)
+        return str(hash.hexdigest())
+def check_hash_present_modern(anvil_user_id, hash):
+    try:
+        azure = G.cached.conn_get(anvil_user_id)
+    except:
+        G.l_register_and_setup_user(anvil_user_id, 1)
+        azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query= """ select 
+                        my_docs_id,
+                        hash
+                   from 
+                        docs_stored
+                   where
+                        hash=?"""
+        cursor.execute(query,hash)
+        res=cursor.fetchall()
+        if res == []:
+            return False
+        elif len(res)==1:
+            return True
+        else:
+            print('Warning: multiple files with identical hash:', hash)
+            return True
 
+# G.l_register_and_setup_user('[344816,583548811]',1)
+# print(check_hash_present_modern('[344816,583548811]','3426c2087d98d35f740987f70ed4f090abda5c0b41ec381165cfb3e90150a1952d98f637eaaba6fc913ecd0c8ec4d8b8'))
 
 def l_process_and_import_docs(anvil_user_id, client_id, filelist):
+    print(anvil_user_id)
+    return_list=[]
     for file in filelist:
         print (file.name)
-        record=l_add_doc_to_docstore_modern(anvil_user_id,client_id,file)
-        print('process und import - new record',record)
-        file_name,file_extension = os.path.splitext(file.name)
-        print(file_name,file_extension)
+        hash = get_hash(file)
+        print(file.name, "has Hash:", hash)
+        if check_hash_present_modern(anvil_user_id,hash):
+            return_list.append(('{} not_stored'.format(file.name),'Datei {} existiert bereits'.format(file.name)))
+        else:
+            record=l_add_doc_to_docstore_modern(anvil_user_id,client_id,file,hash)
+            print('process und import - new record',record)
+            return_list.append(('{} stored'.format(file.name),'Datei {} hinzugefügt'.format(file.name)))
+    file_name,file_extension = os.path.splitext(file.name)
+    print(file_name,file_extension)
+    return return_list
+

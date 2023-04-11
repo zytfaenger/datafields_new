@@ -595,6 +595,10 @@ def select_doc_types_for_dropdown(anvil_user_id):
     return docs_doc_types.l_select_doc_types_for_dropdown(anvil_user_id)
 
 @anvil.server.callable()
+def get_docs_for_a_client_id(anvil_user_id,client_id):
+    return doc_store.l_get_docs_for_a_client_id(anvil_user_id,client_id)
+
+@anvil.server.callable()
 def process_docs(anvil_user_id, client_id, files):
     return doc_store.l_process_and_import_docs(anvil_user_id,client_id,files)
 
