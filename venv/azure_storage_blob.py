@@ -15,7 +15,6 @@ from azure.storage.blob import BlobServiceClient
 def l_upload_to_blob(filename, file):
     try:
         account_url = "https://easyelblob.blob.core.windows.net"
-        keyvault_url = "https://easyelvault.vault.azure.net/"
         default_credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
         container_name='easyelstore'
@@ -29,3 +28,20 @@ def l_upload_to_blob(filename, file):
     except:
         print('Blob nicht geladen!')
         return False
+
+
+def l_download_blob(blob_name):
+    try:
+        account_url = "https://easyelblob.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_name = 'easyelstore'
+        container_client = blob_service_client.get_container_client(container=container_name)
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name.lower())
+        blob_file=blob_client.download_blob().readall()
+        return blob_file
+    except:
+        print('Blob nicht gefunden!')
+        return False
+
+# print(l_download_blob('097f0c0a-f4db-4ea3-b5a2-e04974b07726'))

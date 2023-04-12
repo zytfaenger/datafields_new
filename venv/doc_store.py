@@ -3,7 +3,8 @@ import uuid
 import os
 import hashlib
 import io
-
+import anvil.media
+import anvil
 import azure_storage_blob
 import clients
 import globals as G
@@ -11,12 +12,8 @@ from PyPDF2 import PdfReader, PdfWriter
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.keys import KeyClient
 from azure.keyvault.secrets import SecretClient
-from azure.keyvault.keys.crypto import CryptographyClient, EncryptionAlgorithm
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from pathlib import Path
 
 
@@ -32,6 +29,7 @@ def l_get_docs_for_a_client_id(anvil_user_id,client_id):
         cursor = azure.cursor()
         query: str = """SELECT 
                            my_docs_id id,
+                           client_id_ref,
                            doc_typ_id_ref cat,
                            dt.doc_type_sort dt_sort,
                            years_ref year,
@@ -64,6 +62,53 @@ def l_get_docs_for_a_client_id(anvil_user_id,client_id):
 # a=l_get_docs_for_a_client_id('[344816,583548811]',210)
 # for i in range(0,len(a)):
 #     print(a[i])
+def l_internal_get_docs_record_for_an_id (anvil_user_id, client_id,my_docs_id):
+    try:
+        azure = G.cached.conn_get(anvil_user_id)
+    except:
+        G.l_register_and_setup_user(anvil_user_id, 1)
+        azure = G.cached.conn_get(anvil_user_id)
+
+    azure = G.cached.conn_get(anvil_user_id)
+    with azure:
+        cursor = azure.cursor()
+        query: str = """SELECT 
+                           my_docs_id, 
+                           client_id_ref, 
+                           doc_typ_id_ref, 
+                           years_ref, 
+                           original_file_name, 
+                           store_full_file_name, 
+                           file_description, 
+                           store_filename, 
+                           store_file_ext, 
+                           doc_store_group, 
+                           hash, 
+                           our_pdf_encoding
+                        FROM 
+                            docs_stored ds
+                        WHERE
+                            client_id_ref=? and
+                            my_docs_id=? """
+
+        cursor.execute(query, client_id,my_docs_id)
+
+        columns = [column[0] for column in cursor.description]
+        # print(columns)
+        results = cursor.fetchall()
+        if not results:
+            return [None]
+        else:
+            res = []
+            for row in results:
+                res.append(dict(zip(columns, row)))
+            return res[0]
+
+
+# G.l_register_and_setup_user('[344816,583548811]',1) #Louis
+# a=l_internal_get_docs_record_for_an_id('[344816,583548811]',210,28)
+# for i in range(0,len(a)):
+#     print(a[i])
 
 
 
@@ -77,7 +122,7 @@ def l_add_doc_to_docstore_modern(anvil_user_id, client_id, file, hash):
     new_file_name = str(uuid.uuid4())
     file_desc = ""
     file_name, file_extension = os.path.splitext(file.name)
-    print(file_name, file_extension)
+    # print(file_name, file_extension)
 
     try:
         azure = G.cached.conn_get(anvil_user_id)
@@ -221,10 +266,10 @@ def delete_secret(secname):
 
 def create_token(pwd):
    password = pwd.encode()
-   print(password)
+   # print(password)
 
    salt = os.urandom(16)
-   print(salt)
+   # print(salt)
    kdf = PBKDF2HMAC(
                 algorithm = hashes.SHA256(),
                 length = 32,
@@ -234,16 +279,19 @@ def create_token(pwd):
    key = base64.urlsafe_b64encode(kdf.derive(password))
    return key
 
+# print(create_token('1ea4685e-acce-4a42-a2a8-8ccd57d95800'))
+
+
 def encode(key,file_read):
    f = Fernet(key)
    encoded_file= f.encrypt(file_read)
    return encoded_file
 
-def decode(encoded_file,key):
+def decode(key,encoded_file):
+   #Fernet does the derivation of the url_safe_key!!!
    f = Fernet(key)
    decoded_file = f.decrypt(encoded_file)
    return decoded_file
-
 def write_decoded_file(decoded_file, path_and_filename_and_ending):
    fileout = open(path_and_filename_and_ending, mode='wb')
    fileout.write(decoded_file)
@@ -405,11 +453,11 @@ def l_process_and_import_docs(anvil_user_id, client_id, filelist):
     #store in DB with reference
     return_list=[] #um den Status der einzelnen Dokumente zurückzugeben
     for file in filelist:
-        print (file.name)
+        # print (file.name)
         file_read = file.get_bytes()
         #make sure that document is entered into table but has no duplicates
         hash = get_hash(file_read)
-        print(file.name, "has Hash:", hash)
+        # print(file.name, "has Hash:", hash)
         if check_hash_present_modern(anvil_user_id,hash):
             return_list.append(('{} not_stored'.format(file.name),'Datei {} existiert bereits'.format(file.name)))
         else:
@@ -417,7 +465,7 @@ def l_process_and_import_docs(anvil_user_id, client_id, filelist):
             new_docs_stored_id=newrecord[0] #id of doc stored
             new_file_name_uuid=newrecord[1] #uuid generated and stored
 
-            print('process und import - new record',newrecord)
+            # print('process und import - new record',newrecord)
             return_list.append(('{} stored'.format(file.name),'Datei {} hinzugefügt'.format(file.name)))
 
             file_name, file_extension = os.path.splitext(file.name)
@@ -454,7 +502,7 @@ def l_process_and_import_docs(anvil_user_id, client_id, filelist):
             key=create_token(new_file_name_uuid)
             return_list.append(('{} key created'.format(file.name), 'Key used to encrypt file'))
             # and store it in the secret_store
-            secret=store_secret(new_file_name_uuid,key)
+            secret=store_secret(new_file_name_uuid,key) #base64.urlsafe!
             return_list.append(('{} key stored'.format(file.name), 'Key naming regular'))
             #now use the key to encode the file
             encryped_file_for_BLOB=encode(key,file_to_encrypt)
@@ -466,5 +514,87 @@ def l_process_and_import_docs(anvil_user_id, client_id, filelist):
 
     return return_list
 
-def l_download_blob():
-    pass
+def l_download_blob(anvil_user_id, client_id, my_docs_id):
+    return_message=[]
+    docs_record = l_internal_get_docs_record_for_an_id(anvil_user_id, client_id, my_docs_id)
+    return_message.append("Got file information from DB")
+    blob_name=docs_record['store_full_file_name']
+    hash=docs_record['hash']
+    our_encoding=docs_record['our_pdf_encoding']
+    original_file_name=docs_record['original_file_name']
+    file_extension=docs_record['store_file_ext']
+
+    return_message.append("crucial data obtained")
+
+    key=eval(get_secret(blob_name).value) #get rid of string and get_the_value
+                                           # careful  key needs to be in the in url-safe-format (size 44 bytes)
+                                           # afterward the key will be reduced in decode to 32 bytes
+    blob=azure_storage_blob.l_download_blob(blob_name)
+
+    return_message.append("downloaded Blob")
+    decoded_blob=decode(key,blob)
+    return_message.append("decoded Blob")
+    if file_extension==".pdf":
+      # this uses a file as intermediate...
+        decoded_protected_blob_file = io.open('dpbf.pdf','wb')
+        decoded_protected_blob_file.write(decoded_blob)
+        decoded_protected_blob_file.close()
+
+        pdf_protected_to_read=io.open('dpbf.pdf','rb')
+        reader= PdfReader(pdf_protected_to_read)
+        writer=PdfWriter()
+        if reader.is_encrypted:
+            if our_encoding is True:
+                client_doc_id_uuid = clients.l_get_doc_store_uuid_for_a_client(anvil_user_id, client_id)
+                reader.decrypt(client_doc_id_uuid)
+                for page in reader.pages:
+                   writer.add_page(page)
+                with open(original_file_name,'wb') as f:
+                   writer.write(f)
+                os.remove('dpbf.pdf')
+            else:
+                pdf_to_write = io.open(original_file_name,'wb')
+                pdf_to_write.write(decoded_blob)
+                pdf_to_write.close()
+     # this is more elegant
+    # if file_extension == ".pdf":
+    #     decoded_protected_blob_file_test=io.BytesIO(decoded_blob)
+    #     reader2=PdfReader(decoded_protected_blob_file_test)
+    #     writer2=PdfWriter()
+    #     if reader2.is_encrypted:
+    #         if our_encoding is True:
+    #            client_doc_id_uuid = clients.l_get_doc_store_uuid_for_a_client(anvil_user_id, client_id)
+    #            reader2.decrypt(client_doc_id_uuid)
+    #            return_message.append("Remove Password from pdf")
+    #            for pages in reader2.pages:
+    #                writer2.add_page(pages)
+    #            file_to_return=io.BytesIO()
+    #            file_to_return2= io.FileIO("test314.pdf")
+    #            writer2.write(file_to_return)
+    #            writer2.write(file_to_return2)
+    #            print(file_to_return)
+    #            print(file_to_return2)
+    #            with open(original_file_name,'wb') as t:
+    #                writer2.write(t)
+    #
+    #            return_message.append("original file written")
+    #
+    #         else:
+    #             pdf_to_write = io.open(original_file_name,'wb')
+    #             pdf_to_write.write(decoded_blob)
+    #             pdf_to_write.close()
+    #             return_message.append("client_encrpted file written")
+    else:
+       file_to_write=io.open(original_file_name,'wb')
+       file_to_write.write(decoded_blob)
+       file_to_write.close()
+       return_message.append("Non-PDF-File written")
+
+
+    # with open(original_file_name,'rb') as f:
+    #     text=f.read()
+    a=anvil.media.from_file(original_file_name,name=original_file_name)
+    # file_to_return=anvil.BlobMedia(content_type="text/plain",content=text,name=original_file_name)
+    return a
+
+#print(l_download_blob('[344816,583548811]',210, 28))

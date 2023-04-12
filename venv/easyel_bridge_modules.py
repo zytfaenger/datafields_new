@@ -13,7 +13,6 @@ import functions
 import juno
 import language_functions
 import log_functions
-
 import relations
 import users
 import PLZ
@@ -605,6 +604,10 @@ def update_doc_store_field_modern(anvil_user_id, my_docs_id_to_change, field,val
 @anvil.server.callable()
 def process_docs(anvil_user_id, client_id, files):
     return doc_store.l_process_and_import_docs(anvil_user_id,client_id,files)
+
+@anvil.server.callable()
+def download_blob(anvil_user_id,client_id,my_docs_id):
+    return doc_store.l_download_blob(anvil_user_id,client_id,my_docs_id)
 
 
 anvil.server.wait_forever()
